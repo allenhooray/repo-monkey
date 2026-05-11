@@ -1,6 +1,41 @@
 const SYNC_ALARM_NAME = 'repo-monkey-sync';
 const SYNC_INTERVAL_MINUTES = 30;
 
+function parseRepoInput(input) {
+  if (!input) return null;
+
+  const trimmed = input.trim();
+
+  // 格式 1: owner/repo
+  const ownerRepoMatch = trimmed.match(/^([a-zA-Z0-9-_.]+)\/([a-zA-Z0-9-_.]+)$/);
+  if (ownerRepoMatch) {
+    return {
+      owner: ownerRepoMatch[1],
+      repo: ownerRepoMatch[2]
+    };
+  }
+
+  // 格式 2: HTTPS 链接
+  const httpsMatch = trimmed.match(/^https?:\/\/github\.com\/([a-zA-Z0-9-_.]+)\/([a-zA-Z0-9-_.]+)(?:\.git)?\/?$/);
+  if (httpsMatch) {
+    return {
+      owner: httpsMatch[1],
+      repo: httpsMatch[2]
+    };
+  }
+
+  // 格式 3: SSH 链接
+  const sshMatch = trimmed.match(/^git@github\.com:([a-zA-Z0-9-_.]+)\/([a-zA-Z0-9-_.]+)(?:\.git)?\/?$/);
+  if (sshMatch) {
+    return {
+      owner: sshMatch[1],
+      repo: sshMatch[2]
+    };
+  }
+
+  return null;
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create(SYNC_ALARM_NAME, {
     periodInMinutes: SYNC_INTERVAL_MINUTES
@@ -144,6 +179,7 @@ async function getSettings() {
   const result = await chrome.storage.local.get('settings');
   return result.settings || {
     accessToken: '',
+    repoInput: '',
     repoOwner: '',
     repoName: '',
     lastSync: null
@@ -151,6 +187,13 @@ async function getSettings() {
 }
 
 async function saveSettings(settings) {
+  if (settings.repoInput) {
+    const parsed = parseRepoInput(settings.repoInput);
+    if (parsed) {
+      settings.repoOwner = parsed.owner;
+      settings.repoName = parsed.repo;
+    }
+  }
   await chrome.storage.local.set({ settings });
   return settings;
 }
