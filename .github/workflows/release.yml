@@ -1,0 +1,47 @@
+name: Release to GitHub Releases
+
+on:
+  push:
+    tags:
+      - 'release*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build and package
+        run: npm run build:zip
+      
+      - name: Get version from manifest
+        id: get_version
+        run: |
+          VERSION=$(node -e "console.log(require('./public/manifest.json').version)")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "ZIP_FILE=repo-monkey-v$VERSION.zip" >> $GITHUB_OUTPUT
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ steps.get_version.outputs.ZIP_FILE }}
+          tag_name: ${{ github.ref_name }}
+          name: Release v${{ steps.get_version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
