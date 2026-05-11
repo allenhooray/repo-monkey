@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "RepoMonkey",
+  "version": "1.0.0",
+  "description": "A Tampermonkey-like Chrome extension that manages scripts via GitHub",
+  "permissions": [
+    "storage",
+    "tabs",
+    "activeTab",
+    "scripting",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://github.com/*",
+    "https://api.github.com/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html"
+}
