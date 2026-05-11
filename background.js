@@ -72,6 +72,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     case 'executeScripts':
       executeScripts(request.url).then(sendResponse);
       return true;
+    case 'injectScript':
+      injectScript(request.script, sender.tab.id).then(sendResponse);
+      return true;
   }
 });
 
@@ -219,9 +222,30 @@ function matchUrl(pattern, url) {
   if (pattern === '<all_urls>' || pattern === '*://*/*') return true;
   
   const patternRegex = pattern
+    .replace(/\./g, '\\.')
     .replace(/\*/g, '.*')
-    .replace(/\?/g, '.')
-    .replace(/\./g, '\\.');
+    .replace(/\?/g, '.');
   
   return new RegExp(`^${patternRegex}$`).test(url);
+}
+
+async function injectScript(script, tabId) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      func: (scriptContent, scriptName) => {
+        try {
+          eval(scriptContent);
+        } catch (error) {
+          console.error(`Error executing script ${scriptName}:`, error);
+        }
+      },
+      args: [script.content, script.name],
+      world: 'MAIN'
+    });
+    return { success: true };
+  } catch (error) {
+    console.error(`Failed to inject script ${script.name}:`, error);
+    return { success: false, error: error.message };
+  }
 }

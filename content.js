@@ -7,11 +7,10 @@
   if (response && response.length > 0) {
     for (const script of response) {
       try {
-        const scriptElement = document.createElement('script');
-        scriptElement.textContent = script.content;
-        scriptElement.type = 'text/javascript';
-        (document.head || document.documentElement).appendChild(scriptElement);
-        scriptElement.remove();
+        await chrome.runtime.sendMessage({
+          action: 'injectScript',
+          script: script
+        });
       } catch (error) {
         console.error(`Failed to execute script ${script.name}:`, error);
       }
