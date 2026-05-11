@@ -103,6 +103,9 @@ async function fetchScriptsFromRepo(settings) {
     if (outputResponse.ok) {
       files = await outputResponse.json();
     }
+    if (files.length === 0) {
+      throw new Error('No files found in output directory');
+    }
   } catch (e) {
     const rootResponse = await fetch(`https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/contents/`, { headers });
     if (rootResponse.ok) {
