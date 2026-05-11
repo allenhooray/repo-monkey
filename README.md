@@ -1,59 +1,59 @@
 # RepoMonkey
 
-A Chrome extension that manages userscripts via GitHub, similar to Tampermonkey but with Git-based version control.
+一个通过 GitHub 管理用户脚本的 Chrome 扩展程序，类似于 Tampermonkey，但具有基于 Git 的版本控制功能。
 
-## Features
+## 功能特性
 
-- 📦 **GitHub Integration**: Bind a GitHub repository to store and manage your userscripts
-- 🔄 **Auto Sync**: Automatically syncs scripts every 30 minutes (or manually)
-- 🎯 **Script Management**: Enable/disable scripts with a simple toggle
-- 🎨 **Modern UI**: Clean, minimal interface with green/black/gray color scheme
-- ⚡ **Lightweight**: Fast and efficient, runs only when needed
+- 📦 **GitHub 集成**：绑定 GitHub 仓库来存储和管理你的用户脚本
+- 🔄 **自动同步**：每 30 分钟自动同步（或手动同步）
+- 🎯 **脚本管理**：通过简单的开关启用/禁用脚本
+- 🎨 **现代化 UI**：简洁、简约的界面，采用绿/黑/灰配色方案
+- ⚡ **轻量级**：快速高效，仅在需要时运行
 
-## Installation
+## 安装
 
-1. Clone or download this repository
-2. Open Chrome and navigate to `chrome://extensions/`
-3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the repo-monkey directory
+1. 克隆或下载此仓库
+2. 打开 Chrome 并导航至 `chrome://extensions/`
+3. 在右上角启用"开发者模式"
+4. 点击"加载已解压的扩展程序"并选择 repo-monkey 目录
 
-## Setup
+## 配置
 
-1. Create a GitHub Personal Access Token (PAT):
-   - Go to https://github.com/settings/tokens/new
-   - Select the `repo` scope
-   - Generate and copy your token
+1. 创建 GitHub 个人访问令牌（PAT）：
+   - 访问 https://github.com/settings/tokens/new
+   - 选择 `repo` 作用域
+   - 生成并复制你的令牌
 
-2. Click the RepoMonkey icon in Chrome toolbar
-3. Click "Bind Repository" to open settings
-4. Enter your PAT, repository owner, and repository name
-5. Click "Save & Sync"
+2. 点击 Chrome 工具栏中的 RepoMonkey 图标
+3. 点击"绑定仓库"打开设置
+4. 输入你的 PAT、仓库所有者和仓库名称
+5. 点击"保存并同步"
 
-## Repository Structure
+## 仓库结构
 
-RepoMonkey looks for scripts in two locations (priority order):
-1. `/output/` directory - if this exists, only scripts here will be loaded
-2. Repository root - otherwise, all `.js` files in root will be loaded
+RepoMonkey 在两个位置查找脚本（按优先级顺序）：
+1. `/output/` 目录 - 如果存在，仅加载此处的脚本
+2. 仓库根目录 - 否则，加载根目录中的所有 `.js` 文件
 
-## Userscript Format
+## 用户脚本格式
 
-Scripts should follow standard userscript metadata format:
+脚本应遵循标准的用户脚本元数据格式：
 
 ```javascript
 // ==UserScript==
-// @name         My Awesome Script
+// @name         我的炫酷脚本
 // @match        https://example.com/*
 // ==/UserScript==
 
 console.log('Hello, World!');
 ```
 
-## Usage
+## 使用方法
 
-- Toggle scripts on/off from the popup
-- Sync manually by clicking "Sync Now"
-- Manage settings from the options page
+- 从弹出窗口中切换脚本的开启/关闭
+- 点击"立即同步"手动同步
+- 从选项页面管理设置
 
-## License
+## 许可证
 
 MIT
