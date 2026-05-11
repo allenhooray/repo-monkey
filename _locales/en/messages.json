@@ -1,0 +1,130 @@
+{
+  "extName": {
+    "message": "RepoMonkey",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "A Tampermonkey-like Chrome extension that manages scripts via GitHub",
+    "description": "Extension description"
+  },
+  "bindGitHubRepo": {
+    "message": "Bind GitHub Repository",
+    "description": "Title for bind form"
+  },
+  "personalAccessToken": {
+    "message": "Personal Access Token",
+    "description": "Label for access token input"
+  },
+  "accessTokenPlaceholder": {
+    "message": "ghp_xxxxxxxxxxxx",
+    "description": "Placeholder for access token input"
+  },
+  "createTokenDesc": {
+    "message": "Create a token with",
+    "description": "Part of the access token description"
+  },
+  "repoScope": {
+    "message": "repo",
+    "description": "The scope required for the token"
+  },
+  "scopeAt": {
+    "message": "scope at",
+    "description": "Part of the access token description"
+  },
+  "githubSettings": {
+    "message": "GitHub Settings",
+    "description": "Link text to GitHub settings"
+  },
+  "repository": {
+    "message": "Repository",
+    "description": "Label for repository input"
+  },
+  "repoInputPlaceholder": {
+    "message": "owner/repo or https://github.com/owner/repo or git@github.com:owner/repo.git",
+    "description": "Placeholder for repository input"
+  },
+  "supportFormats": {
+    "message": "Support:",
+    "description": "Label for supported formats"
+  },
+  "saveSync": {
+    "message": "Save & Sync",
+    "description": "Button text for save and sync"
+  },
+  "pleaseFillAll": {
+    "message": "Please fill in all fields",
+    "description": "Error message for empty fields"
+  },
+  "invalidRepoFormat": {
+    "message": "Invalid repository format. Please use owner/repo, HTTPS, or SSH URL",
+    "description": "Error message for invalid repo format"
+  },
+  "savingSyncing": {
+    "message": "Saving and syncing...",
+    "description": "Loading message while saving"
+  },
+  "successBound": {
+    "message": "Successfully bound repository!",
+    "description": "Success message"
+  },
+  "error": {
+    "message": "Error:",
+    "description": "Error prefix"
+  },
+  "boundRepository": {
+    "message": "Bound Repository",
+    "description": "Title for bound repo view"
+  },
+  "lastSync": {
+    "message": "Last sync:",
+    "description": "Label for last sync time"
+  },
+  "never": {
+    "message": "Never",
+    "description": "Text for never synced"
+  },
+  "viewOnGitHub": {
+    "message": "View on GitHub →",
+    "description": "Link text to view on GitHub"
+  },
+  "syncNow": {
+    "message": "Sync Now",
+    "description": "Button text for sync now"
+  },
+  "editSettings": {
+    "message": "Edit Settings",
+    "description": "Button text for edit settings"
+  },
+  "unbind": {
+    "message": "Unbind",
+    "description": "Button text for unbind"
+  },
+  "syncing": {
+    "message": "Syncing...",
+    "description": "Loading message while syncing"
+  },
+  "syncSuccess": {
+    "message": "Sync successful!",
+    "description": "Success message for sync"
+  },
+  "syncFailed": {
+    "message": "Sync failed:",
+    "description": "Error message for failed sync"
+  },
+  "confirmUnbind": {
+    "message": "Are you sure you want to unbind this repository?",
+    "description": "Confirmation message for unbind"
+  },
+  "noRepoBound": {
+    "message": "No repository bound yet",
+    "description": "Message when no repo is bound"
+  },
+  "bindRepo": {
+    "message": "Bind Repository",
+    "description": "Button text to bind repo"
+  },
+  "noScriptsFound": {
+    "message": "No scripts found",
+    "description": "Message when no scripts are found"
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "extName": {
+    "message": "RepoMonkey",
+    "description": "扩展名称"
+  },
+  "extDescription": {
+    "message": "一个类似 Tampermonkey 的 Chrome 扩展，通过 GitHub 管理脚本",
+    "description": "扩展描述"
+  },
+  "bindGitHubRepo": {
+    "message": "绑定 GitHub 仓库",
+    "description": "绑定表单标题"
+  },
+  "personalAccessToken": {
+    "message": "个人访问令牌",
+    "description": "访问令牌输入框标签"
+  },
+  "accessTokenPlaceholder": {
+    "message": "ghp_xxxxxxxxxxxx",
+    "description": "访问令牌输入框占位符"
+  },
+  "createTokenDesc": {
+    "message": "在",
+    "description": "访问令牌描述的一部分"
+  },
+  "repoScope": {
+    "message": "repo",
+    "description": "令牌所需的权限范围"
+  },
+  "scopeAt": {
+    "message": "创建具有权限的令牌",
+    "description": "访问令牌描述的一部分"
+  },
+  "githubSettings": {
+    "message": "GitHub 设置",
+    "description": "GitHub 设置链接文字"
+  },
+  "repository": {
+    "message": "仓库",
+    "description": "仓库输入框标签"
+  },
+  "repoInputPlaceholder": {
+    "message": "owner/repo 或 https://github.com/owner/repo 或 git@github.com:owner/repo.git",
+    "description": "仓库输入框占位符"
+  },
+  "supportFormats": {
+    "message": "支持格式：",
+    "description": "支持格式标签"
+  },
+  "saveSync": {
+    "message": "保存并同步",
+    "description": "保存并同步按钮文字"
+  },
+  "pleaseFillAll": {
+    "message": "请填写所有字段",
+    "description": "空字段错误提示"
+  },
+  "invalidRepoFormat": {
+    "message": "无效的仓库格式。请使用 owner/repo、HTTPS 或 SSH URL",
+    "description": "无效仓库格式错误提示"
+  },
+  "savingSyncing": {
+    "message": "正在保存并同步...",
+    "description": "保存时的加载提示"
+  },
+  "successBound": {
+    "message": "仓库绑定成功！",
+    "description": "成功提示"
+  },
+  "error": {
+    "message": "错误：",
+    "description": "错误前缀"
+  },
+  "boundRepository": {
+    "message": "已绑定的仓库",
+    "description": "已绑定仓库视图标题"
+  },
+  "lastSync": {
+    "message": "上次同步：",
+    "description": "上次同步时间标签"
+  },
+  "never": {
+    "message": "从未",
+    "description": "从未同步的文字"
+  },
+  "viewOnGitHub": {
+    "message": "在 GitHub 上查看 →",
+    "description": "GitHub 查看链接文字"
+  },
+  "syncNow": {
+    "message": "立即同步",
+    "description": "立即同步按钮文字"
+  },
+  "editSettings": {
+    "message": "编辑设置",
+    "description": "编辑设置按钮文字"
+  },
+  "unbind": {
+    "message": "解绑",
+    "description": "解绑按钮文字"
+  },
+  "syncing": {
+    "message": "正在同步...",
+    "description": "同步时的加载提示"
+  },
+  "syncSuccess": {
+    "message": "同步成功！",
+    "description": "同步成功提示"
+  },
+  "syncFailed": {
+    "message": "同步失败：",
+    "description": "同步失败错误提示"
+  },
+  "confirmUnbind": {
+    "message": "确定要解绑此仓库吗？",
+    "description": "解绑确认提示"
+  },
+  "noRepoBound": {
+    "message": "尚未绑定仓库",
+    "description": "未绑定仓库时的提示"
+  },
+  "bindRepo": {
+    "message": "绑定仓库",
+    "description": "绑定仓库按钮文字"
+  },
+  "noScriptsFound": {
+    "message": "未找到脚本",
+    "description": "未找到脚本时的提示"
+  }
+}

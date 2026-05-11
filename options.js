@@ -51,24 +51,24 @@ function renderBindForm(container, settings) {
 
   container.innerHTML = `
     <div class="card">
-      <h2>Bind GitHub Repository</h2>
+      <h2>${chrome.i18n.getMessage('bindGitHubRepo')}</h2>
       <div class="form-group">
-        <label for="accessToken">Personal Access Token</label>
-        <input type="password" id="accessToken" placeholder="ghp_xxxxxxxxxxxx" value="${escapeHtml(settings.accessToken)}">
+        <label for="accessToken">${chrome.i18n.getMessage('personalAccessToken')}</label>
+        <input type="password" id="accessToken" placeholder="${chrome.i18n.getMessage('accessTokenPlaceholder')}" value="${escapeHtml(settings.accessToken)}">
         <small style="color: #888; font-size: 12px; margin-top: 8px; display: block;">
-          Create a token with <strong>repo</strong> scope at 
-          <a href="https://github.com/settings/tokens/new" target="_blank" style="color: #2ecc71;">GitHub Settings</a>
+          ${chrome.i18n.getMessage('createTokenDesc')} <strong>${chrome.i18n.getMessage('repoScope')}</strong> ${chrome.i18n.getMessage('scopeAt')}
+          <a href="https://github.com/settings/tokens/new" target="_blank" style="color: #2ecc71;">${chrome.i18n.getMessage('githubSettings')}</a>
         </small>
       </div>
       <div class="form-group">
-        <label for="repoInput">Repository</label>
-        <input type="text" id="repoInput" placeholder="owner/repo or https://github.com/owner/repo or git@github.com:owner/repo.git" value="${escapeHtml(repoInput)}">
+        <label for="repoInput">${chrome.i18n.getMessage('repository')}</label>
+        <input type="text" id="repoInput" placeholder="${chrome.i18n.getMessage('repoInputPlaceholder')}" value="${escapeHtml(repoInput)}">
         <small style="color: #888; font-size: 12px; margin-top: 8px; display: block;">
-          Support: <code>owner/repo</code>, <code>https://github.com/owner/repo</code>, or <code>git@github.com:owner/repo.git</code>
+          ${chrome.i18n.getMessage('supportFormats')} <code>owner/repo</code>, <code>https://github.com/owner/repo</code>, or <code>git@github.com:owner/repo.git</code>
         </small>
       </div>
       <div class="btn-group">
-        <button id="saveBtn" class="btn btn-primary">Save & Sync</button>
+        <button id="saveBtn" class="btn btn-primary">${chrome.i18n.getMessage('saveSync')}</button>
       </div>
       <div id="status"></div>
     </div>
@@ -80,17 +80,17 @@ function renderBindForm(container, settings) {
     const repoInput = document.getElementById('repoInput').value.trim();
 
     if (!accessToken || !repoInput) {
-      status.innerHTML = '<div class="status error">Please fill in all fields</div>';
+      status.innerHTML = `<div class="status error">${chrome.i18n.getMessage('pleaseFillAll')}</div>`;
       return;
     }
 
     const parsed = parseRepoInput(repoInput);
     if (!parsed) {
-      status.innerHTML = '<div class="status error">Invalid repository format. Please use owner/repo, HTTPS, or SSH URL</div>';
+      status.innerHTML = `<div class="status error">${chrome.i18n.getMessage('invalidRepoFormat')}</div>`;
       return;
     }
 
-    status.innerHTML = '<div class="loading">Saving and syncing...</div>';
+    status.innerHTML = `<div class="loading">${chrome.i18n.getMessage('savingSyncing')}</div>`;
 
     try {
       await chrome.runtime.sendMessage({
@@ -106,10 +106,10 @@ function renderBindForm(container, settings) {
 
       await chrome.runtime.sendMessage({ action: 'syncScripts' });
 
-      status.innerHTML = '<div class="status success">Successfully bound repository!</div>';
+      status.innerHTML = `<div class="status success">${chrome.i18n.getMessage('successBound')}</div>`;
       setTimeout(loadContent, 1000);
     } catch (error) {
-      status.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+      status.innerHTML = `<div class="status error">${chrome.i18n.getMessage('error')} ${error.message}</div>`;
     }
   });
 }
@@ -118,22 +118,22 @@ function renderBoundRepo(container, settings) {
   const repoUrl = `https://github.com/${settings.repoOwner}/${settings.repoName}`;
   const lastSync = settings.lastSync 
     ? new Date(settings.lastSync).toLocaleString() 
-    : 'Never';
+    : chrome.i18n.getMessage('never');
 
   container.innerHTML = `
     <div class="card">
-      <h2>Bound Repository</h2>
+      <h2>${chrome.i18n.getMessage('boundRepository')}</h2>
       <div class="repo-info">
         <div>
           <div class="repo-name">${escapeHtml(settings.repoOwner)}/${escapeHtml(settings.repoName)}</div>
-          <div style="font-size: 12px; color: #888; margin-top: 4px;">Last sync: ${lastSync}</div>
+          <div style="font-size: 12px; color: #888; margin-top: 4px;">${chrome.i18n.getMessage('lastSync')} ${lastSync}</div>
         </div>
-        <a href="${repoUrl}" target="_blank" class="repo-link">View on GitHub →</a>
+        <a href="${repoUrl}" target="_blank" class="repo-link">${chrome.i18n.getMessage('viewOnGitHub')}</a>
       </div>
       <div class="btn-group">
-        <button id="syncBtn" class="btn btn-primary">Sync Now</button>
-        <button id="editBtn" class="btn btn-secondary">Edit Settings</button>
-        <button id="unbindBtn" class="btn btn-danger">Unbind</button>
+        <button id="syncBtn" class="btn btn-primary">${chrome.i18n.getMessage('syncNow')}</button>
+        <button id="editBtn" class="btn btn-secondary">${chrome.i18n.getMessage('editSettings')}</button>
+        <button id="unbindBtn" class="btn btn-danger">${chrome.i18n.getMessage('unbind')}</button>
       </div>
       <div id="status"></div>
     </div>
@@ -141,7 +141,7 @@ function renderBoundRepo(container, settings) {
 
   document.getElementById('syncBtn').addEventListener('click', async () => {
     const status = document.getElementById('status');
-    status.innerHTML = '<div class="loading">Syncing...</div>';
+    status.innerHTML = `<div class="loading">${chrome.i18n.getMessage('syncing')}</div>`;
     
     try {
       await chrome.runtime.sendMessage({ action: 'syncScripts' });
@@ -151,10 +151,10 @@ function renderBoundRepo(container, settings) {
         settings: { ...settings, lastSync: new Date().toISOString() }
       });
       
-      status.innerHTML = '<div class="status success">Sync successful!</div>';
+      status.innerHTML = `<div class="status success">${chrome.i18n.getMessage('syncSuccess')}</div>`;
       setTimeout(() => loadContent(), 1000);
     } catch (error) {
-      status.innerHTML = `<div class="status error">Sync failed: ${error.message}</div>`;
+      status.innerHTML = `<div class="status error">${chrome.i18n.getMessage('syncFailed')} ${error.message}</div>`;
     }
   });
 
@@ -163,7 +163,7 @@ function renderBoundRepo(container, settings) {
   });
 
   document.getElementById('unbindBtn').addEventListener('click', async () => {
-    if (confirm('Are you sure you want to unbind this repository?')) {
+    if (confirm(chrome.i18n.getMessage('confirmUnbind'))) {
       await chrome.runtime.sendMessage({ action: 'unbindRepo' });
       loadContent();
     }

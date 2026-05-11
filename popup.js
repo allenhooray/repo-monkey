@@ -25,8 +25,8 @@ async function loadContent() {
 function renderNoRepo(container) {
   container.innerHTML = `
     <div class="no-repo">
-      <p>No repository bound yet</p>
-      <button id="openSettingsBtn" class="btn btn-primary">Bind Repository</button>
+      <p>${chrome.i18n.getMessage('noRepoBound')}</p>
+      <button id="openSettingsBtn" class="btn btn-primary">${chrome.i18n.getMessage('bindRepo')}</button>
     </div>
   `;
 
@@ -38,25 +38,25 @@ function renderNoRepo(container) {
 function renderScripts(container, scripts, settings) {
   const lastSync = settings.lastSync 
     ? new Date(settings.lastSync).toLocaleString() 
-    : 'Never';
+    : chrome.i18n.getMessage('never');
 
   container.innerHTML = `
     <div class="sync-bar">
-      <div class="sync-info">Last sync: ${lastSync}</div>
-      <button id="syncBtn" class="btn btn-secondary">Sync Now</button>
+      <div class="sync-info">${chrome.i18n.getMessage('lastSync')} ${lastSync}</div>
+      <button id="syncBtn" class="btn btn-secondary">${chrome.i18n.getMessage('syncNow')}</button>
     </div>
     <div id="scriptList" class="script-list"></div>
   `;
 
   document.getElementById('syncBtn').addEventListener('click', async () => {
-    container.innerHTML = '<div class="loading">Syncing...</div>';
+    container.innerHTML = `<div class="loading">${chrome.i18n.getMessage('syncing')}</div>`;
     await chrome.runtime.sendMessage({ action: 'syncScripts' });
     await loadContent();
   });
 
   const scriptList = document.getElementById('scriptList');
   if (scripts.length === 0) {
-    scriptList.innerHTML = '<p style="text-align: center; color: #888;">No scripts found</p>';
+    scriptList.innerHTML = `<p style="text-align: center; color: #888;">${chrome.i18n.getMessage('noScriptsFound')}</p>`;
     return;
   }
 
