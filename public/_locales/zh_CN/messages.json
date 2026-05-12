@@ -126,5 +126,45 @@
   "noScriptsFound": {
     "message": "未找到脚本",
     "description": "未找到脚本时的提示"
+  },
+  "settingsTitle": {
+    "message": "设置",
+    "description": "选项页顶部标题"
+  },
+  "generalSettings": {
+    "message": "通用设置",
+    "description": "通用设置导航项"
+  },
+  "repositorySettings": {
+    "message": "仓库设置",
+    "description": "仓库设置导航项"
+  },
+  "scriptManagement": {
+    "message": "脚本管理",
+    "description": "脚本管理导航项"
+  },
+  "language": {
+    "message": "语言",
+    "description": "语言选择标签"
+  },
+  "languageDesc": {
+    "message": "选择扩展界面的显示语言。",
+    "description": "语言选择说明"
+  },
+  "english": {
+    "message": "English",
+    "description": "英文选项"
+  },
+  "chineseSimplified": {
+    "message": "简体中文",
+    "description": "简体中文选项"
+  },
+  "comingSoon": {
+    "message": "敬请期待……",
+    "description": "空页面占位符"
+  },
+  "cancel": {
+    "message": "取消",
+    "description": "取消按钮"
   }
 }

@@ -126,5 +126,45 @@
   "noScriptsFound": {
     "message": "No scripts found",
     "description": "Message when no scripts are found"
+  },
+  "settingsTitle": {
+    "message": "Settings",
+    "description": "Top header on options page"
+  },
+  "generalSettings": {
+    "message": "General",
+    "description": "General settings nav item"
+  },
+  "repositorySettings": {
+    "message": "Repository",
+    "description": "Repository settings nav item"
+  },
+  "scriptManagement": {
+    "message": "Scripts",
+    "description": "Script management nav item"
+  },
+  "language": {
+    "message": "Language",
+    "description": "Label for language selector"
+  },
+  "languageDesc": {
+    "message": "Choose the display language for the extension UI.",
+    "description": "Description for language selector"
+  },
+  "english": {
+    "message": "English",
+    "description": "English option"
+  },
+  "chineseSimplified": {
+    "message": "简体中文",
+    "description": "Simplified Chinese option"
+  },
+  "comingSoon": {
+    "message": "Coming soon...",
+    "description": "Placeholder for empty pages"
+  },
+  "cancel": {
+    "message": "Cancel",
+    "description": "Cancel button"
   }
 }

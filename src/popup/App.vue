@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import type { Script } from '../runtime';
 import type { Settings } from '../shared/types';
+import { currentLocale, setLocale, t as translate } from '../shared/i18n';
 
 const settings = ref<Settings | null>(null);
 const scripts = ref<Script[]>([]);
@@ -18,11 +19,12 @@ const hasRepo = computed(
 const lastSyncText = computed(() => {
   return settings.value?.lastSync
     ? new Date(settings.value.lastSync).toLocaleString()
-    : chrome.i18n.getMessage('never');
+    : t('never');
 });
 
 function t(key: string): string {
-  return chrome.i18n.getMessage(key);
+  void currentLocale.value;
+  return translate(key);
 }
 
 function openOptions(): void {
@@ -33,6 +35,10 @@ async function loadData(): Promise<void> {
   loading.value = true;
   const settingsResponse = await chrome.runtime.sendMessage({ action: 'getSettings' });
   settings.value = settingsResponse.settings as Settings;
+
+  if (settings.value?.language) {
+    setLocale(settings.value.language);
+  }
 
   if (hasRepo.value) {
     const scriptsResponse = await chrome.runtime.sendMessage({ action: 'getScripts' });

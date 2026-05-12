@@ -1,9 +1,12 @@
+export type Locale = 'en' | 'zh_CN';
+
 export interface Settings {
   accessToken: string;
   repoInput: string;
   repoOwner: string;
   repoName: string;
   lastSync: string | null;
+  language?: Locale;
 }
 
 export interface GitHubFile {

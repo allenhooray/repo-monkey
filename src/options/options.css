@@ -17,6 +17,10 @@ body {
   padding: 40px 20px;
 }
 
+#app {
+  min-height: 100vh;
+}
+
 header {
   margin-bottom: 40px;
 }
