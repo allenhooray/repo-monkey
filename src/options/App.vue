@@ -1030,13 +1030,14 @@ function shouldShowNode(node: TreeNode<Script> & { depth: number }): boolean {
             >
               <template v-if="node.type === 'dir'">
                 <span class="dir-toggle" @click.stop="toggleDir(node.id)">
-                  {{ isDirExpanded(node.id) || searchQuery.value ? '▼' : '▶' }}
+                  <span class="chevron" :class="{ expanded: isDirExpanded(node.id) || searchQuery.value }"></span>
                 </span>
-                <span class="dir-icon">📁</span>
+                <span class="dir-icon"></span>
                 <span class="dir-name">{{ node.name }}</span>
               </template>
               <template v-else-if="node.file">
-                <span class="file-icon">📜</span>
+                <span class="dir-toggle-placeholder"></span>
+                <span class="file-icon"></span>
                 <div class="script-item-content">
                   <div class="script-item-header">
                     <input
@@ -1946,15 +1947,17 @@ function shouldShowNode(node: TreeNode<Script> & { depth: number }): boolean {
 .tree-node {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 6px;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.15s;
+  user-select: none;
+  min-height: 22px;
 }
 
 .tree-node:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: #2a2d2e;
 }
 
 .tree-node.active {
@@ -1976,27 +1979,104 @@ function shouldShowNode(node: TreeNode<Script> & { depth: number }): boolean {
 
 .dir-toggle {
   width: 16px;
-  text-align: center;
-  font-size: 10px;
-  color: #888;
-  user-select: none;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
-.dir-icon,
-.file-icon {
-  font-size: 14px;
+.dir-toggle-placeholder {
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
+}
+
+.chevron {
+  width: 0;
+  height: 0;
+  border-left: 4px solid #6e7681;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform 0.1s ease;
+}
+
+.chevron.expanded {
+  transform: rotate(90deg);
+}
+
+.dir-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.dir-icon::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 1px;
+  width: 12px;
+  height: 8px;
+  background: #d29922;
+  border-radius: 2px 2px 0 0;
+}
+
+.dir-icon::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 0;
+  width: 14px;
+  height: 9px;
+  background: #e3b341;
+  border-radius: 0 2px 2px 2px;
+}
+
+.file-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.file-icon::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 12px;
+  background: #4d9375;
+  border-radius: 0 2px 2px 2px;
+}
+
+.file-icon::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  width: 4px;
+  height: 4px;
+  background: #1e1e1e;
+  border-left: 1px solid #4d9375;
+  border-bottom: 1px solid #4d9375;
+  transform: skewY(-45deg);
 }
 
 .dir-name {
   font-weight: 500;
   color: #e0e0e0;
+  font-size: 13px;
 }
 
 .script-item-content {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .script-item-meta {
@@ -2014,14 +2094,14 @@ function shouldShowNode(node: TreeNode<Script> & { depth: number }): boolean {
 }
 
 .script-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: #e0e0e0;
 }
 
 .script-filename {
-  font-size: 12px;
-  color: #666;
+  font-size: 11px;
+  color: #6e7681;
 }
 
 .orphan-badge {

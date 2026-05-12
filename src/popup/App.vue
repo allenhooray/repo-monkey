@@ -179,29 +179,30 @@ onMounted(loadData);
               :style="{ paddingLeft: `${(node.depth - 1) * 16}px` }"
             >
               <template v-if="node.type === 'dir'">
-                <span class="dir-toggle" @click="toggleDir(node.id)">
-                  {{ isDirExpanded(node.id) ? '▼' : '▶' }}
-                </span>
-                <span class="dir-icon">📁</span>
-                <span class="dir-name">{{ node.name }}</span>
-              </template>
-              <template v-else-if="node.file">
-                <span class="file-icon">📜</span>
-                <div class="script-info">
-                  <div class="script-name">{{ node.file.name }}</div>
-                  <div class="script-meta">
-                    {{ node.file.fileName }} • {{ formatDate(node.file) }}
-                  </div>
+              <span class="dir-toggle" @click="toggleDir(node.id)">
+                <span class="chevron" :class="{ expanded: isDirExpanded(node.id) }"></span>
+              </span>
+              <span class="dir-icon"></span>
+              <span class="dir-name">{{ node.name }}</span>
+            </template>
+            <template v-else-if="node.file">
+              <span class="dir-toggle-placeholder"></span>
+              <span class="file-icon"></span>
+              <div class="script-info">
+                <div class="script-name">{{ node.file.name }}</div>
+                <div class="script-meta">
+                  {{ node.file.fileName }} • {{ formatDate(node.file) }}
                 </div>
-                <label class="switch">
-                  <input
-                    type="checkbox"
-                    :checked="node.file.enabled"
-                    @change="handleToggle(node.file.id)"
-                  />
-                  <span class="slider"></span>
-                </label>
-              </template>
+              </div>
+              <label class="switch">
+                <input
+                  type="checkbox"
+                  :checked="node.file.enabled"
+                  @change="handleToggle(node.file.id)"
+                />
+                <span class="slider"></span>
+              </label>
+            </template>
             </div>
           </template>
         </div>
@@ -240,13 +241,16 @@ onMounted(loadData);
 .tree-node {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 6px;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  min-height: 22px;
 }
 
 .tree-node:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: #2a2d2e;
 }
 
 .tree-node-dir {
@@ -255,44 +259,122 @@ onMounted(loadData);
 
 .dir-toggle {
   width: 16px;
-  text-align: center;
-  font-size: 10px;
-  color: #888;
-  user-select: none;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.dir-icon,
+.dir-toggle-placeholder {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.chevron {
+  width: 0;
+  height: 0;
+  border-left: 4px solid #6e7681;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform 0.1s ease;
+}
+
+.chevron.expanded {
+  transform: rotate(90deg);
+}
+
+.dir-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.dir-icon::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 1px;
+  width: 12px;
+  height: 8px;
+  background: #d29922;
+  border-radius: 2px 2px 0 0;
+}
+
+.dir-icon::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 0;
+  width: 14px;
+  height: 9px;
+  background: #e3b341;
+  border-radius: 0 2px 2px 2px;
+}
+
 .file-icon {
-  font-size: 14px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.file-icon::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 12px;
+  background: #4d9375;
+  border-radius: 0 2px 2px 2px;
+}
+
+.file-icon::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  width: 4px;
+  height: 4px;
+  background: #1e1e1e;
+  border-left: 1px solid #4d9375;
+  border-bottom: 1px solid #4d9375;
+  transform: skewY(-45deg);
 }
 
 .dir-name {
   font-weight: 500;
   color: #e0e0e0;
+  font-size: 13px;
 }
 
 .script-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .script-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: #e0e0e0;
 }
 
 .script-meta {
-  font-size: 12px;
-  color: #666;
-  margin-top: 2px;
+  font-size: 11px;
+  color: #6e7681;
 }
 
 .switch {
   position: relative;
   display: inline-block;
-  width: 36px;
-  height: 20px;
+  width: 32px;
+  height: 18px;
   flex-shrink: 0;
 }
 
@@ -309,19 +391,19 @@ onMounted(loadData);
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #404040;
+  background-color: #373e47;
   transition: 0.2s;
-  border-radius: 20px;
+  border-radius: 9px;
 }
 
 .slider:before {
   position: absolute;
   content: "";
-  height: 16px;
-  width: 16px;
+  height: 14px;
+  width: 14px;
   left: 2px;
   bottom: 2px;
-  background-color: white;
+  background-color: #adbac7;
   transition: 0.2s;
   border-radius: 50%;
 }
@@ -331,6 +413,7 @@ input:checked + .slider {
 }
 
 input:checked + .slider:before {
-  transform: translateX(16px);
+  transform: translateX(14px);
+  background-color: white;
 }
 </style>
