@@ -47,6 +47,8 @@ const diffLocalContent = ref('');
 const diffContent = ref('');
 
 const showDeleteMenu = ref(false);
+const showNewScriptDialog = ref(false);
+const newScriptFileName = ref('');
 const showBatchPushProgress = ref(false);
 const batchPushResult = ref<BatchPushResult | null>(null);
 const showBatchPushResult = ref(false);
@@ -303,20 +305,67 @@ console.log('Hello, world!');
 `;
 
 function handleNewScript(): void {
-  const tempScript: Partial<Script> = {
-    name: 'New Script',
-    fileName: `new-script-${Date.now()}.js`,
-    content: DEFAULT_SCRIPT_TEMPLATE,
-    enabled: true,
-  };
+  newScriptFileName.value = `new-script-${Date.now()}.js`;
+  showNewScriptDialog.value = true;
+}
+
+async function confirmNewScript(): Promise<void> {
+  const fileName = newScriptFileName.value.trim();
   
-  selectedScriptId.value = 'new';
-  editorFileName.value = tempScript.fileName as string;
-  editorContent.value = tempScript.content as string;
+  if (!fileName) {
+    setStatus('error', t('fileNameRequired'));
+    return;
+  }
   
-  nextTick(() => {
-    initEditor();
-  });
+  if (!fileName.endsWith('.js')) {
+    setStatus('error', t('fileNameInvalid'));
+    return;
+  }
+  
+  const validNameRegex = /^[a-zA-Z0-9-_./]+$/;
+  if (!validNameRegex.test(fileName)) {
+    setStatus('error', t('fileNameInvalid'));
+    return;
+  }
+  
+  const duplicate = scripts.value.some((s: Script) => 
+    s.fileName === fileName || s.remotePath === fileName
+  );
+  
+  if (duplicate) {
+    setStatus('error', t('fileNameDuplicate'));
+    return;
+  }
+  
+  try {
+    // 真正创建脚本
+    const newScriptData = {
+      fileName,
+      content: DEFAULT_SCRIPT_TEMPLATE,
+      name: '',
+      metadata: {},
+    };
+    
+    const response = await chrome.runtime.sendMessage({
+      action: 'createScript',
+      script: newScriptData,
+    });
+    
+    if (response.success) {
+      showNewScriptDialog.value = false;
+      scripts.value = response.scripts as Script[];
+      const newScript = scripts.value[scripts.value.length - 1];
+      selectedScriptId.value = newScript.id;
+      setStatus('success', t('saveSuccess'));
+      setTimeout(clearStatus, 2000);
+      
+      nextTick(() => {
+        initEditor();
+      });
+    }
+  } catch (error) {
+    setStatus('error', `${t('error')} ${(error as Error).message}`);
+  }
 }
 
 function validateFileName(fileName: string): { valid: boolean; message?: string } {
@@ -1132,6 +1181,36 @@ function handleUpdateExpandedDirs(newDirs: Set<string>): void {
         <div class="dialog-actions">
           <button class="btn btn-primary" @click="closeBatchPushResult">
             OK
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Script Dialog -->
+    <div v-if="showNewScriptDialog" class="dialog-overlay">
+      <div class="dialog">
+        <h3 class="dialog-title">{{ t('newScript') }}</h3>
+        <div class="form-group">
+          <label>{{ t('fileName') }}</label>
+          <input
+            v-model="newScriptFileName"
+            type="text"
+            class="input"
+            placeholder="my-script.js"
+            @keyup.enter="confirmNewScript"
+            autofocus
+          />
+          <small class="hint">{{ t('fileNameInvalid') }}</small>
+        </div>
+        <div v-if="statusMessage" :class="['status-line', statusType]" style="margin-top: 0; margin-bottom: 16px;">
+          {{ statusMessage }}
+        </div>
+        <div class="dialog-actions">
+          <button class="btn btn-secondary" @click="showNewScriptDialog = false; clearStatus()">
+            {{ t('cancel') }}
+          </button>
+          <button class="btn btn-primary" @click="confirmNewScript">
+            {{ t('create') }}
           </button>
         </div>
       </div>

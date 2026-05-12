@@ -354,5 +354,9 @@
   "deleteSuccess": {
     "message": "Deleted successfully",
     "description": "Delete success message"
+  },
+  "create": {
+    "message": "Create",
+    "description": "Create button text"
   }
 }

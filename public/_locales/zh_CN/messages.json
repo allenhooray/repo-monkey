@@ -354,5 +354,9 @@
   "deleteSuccess": {
     "message": "删除成功",
     "description": "删除成功提示"
+  },
+  "create": {
+    "message": "创建",
+    "description": "创建按钮文字"
   }
 }
