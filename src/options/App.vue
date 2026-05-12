@@ -13,12 +13,14 @@ import { ScriptSource } from '../shared/constants';
 import type { Script } from '../runtime';
 import { diffLines } from 'diff';
 import ScriptTree from '../shared/components/ScriptTree.vue';
+import { useSyncedSettings, useSyncedScripts } from '../shared/composables/useSyncedState';
 
 type StatusType = 'success' | 'error' | 'loading' | '';
 type TabKey = 'general' | 'repository' | 'scripts';
 type PushStatus = 'idle' | 'pushing' | 'success' | 'conflict';
 
-const settings = ref<Settings | null>(null);
+const { settings } = useSyncedSettings();
+const { scripts } = useSyncedScripts();
 const loading = ref(true);
 const editing = ref(false);
 const activeTab = ref<TabKey>('general');
@@ -26,7 +28,6 @@ const accessToken = ref('');
 const repoInput = ref('');
 const statusType = ref<StatusType>('');
 const statusMessage = ref('');
-const scripts = ref<Script[]>([]);
 const selectedScriptId = ref<string | null>(null);
 const searchQuery = ref('');
 const isFullscreen = ref(false);
@@ -60,17 +61,17 @@ const isBound = computed(
 );
 
 const dirtyScriptsCount = computed(() => {
-  return scripts.value.filter(s => 
+  return scripts.value.filter((s: Script) => 
     s.source === ScriptSource.LOCAL || s.source === ScriptSource.MODIFIED || s.dirty
   ).length;
 });
 
 const orphanScriptsCount = computed(() => {
-  return scripts.value.filter(s => s.orphan).length;
+  return scripts.value.filter((s: Script) => s.orphan).length;
 });
 
-const hasDirtyScripts = computed(() => dirtyScriptsCount > 0);
-const hasOrphanScripts = computed(() => orphanScriptsCount > 0);
+const hasDirtyScripts = computed(() => dirtyScriptsCount.value > 0);
+const hasOrphanScripts = computed(() => orphanScriptsCount.value > 0);
 
 const showForm = computed(() => editing.value || !isBound.value);
 
@@ -86,7 +87,7 @@ const lastSyncText = computed(() => {
 });
 
 const selectedScript = computed(() => {
-  return scripts.value.find(s => s.id === selectedScriptId.value) || null;
+  return scripts.value.find((s: Script) => s.id === selectedScriptId.value) || null;
 });
 
 const isLocalScript = computed(() => {
@@ -163,22 +164,20 @@ function syncFormFields(): void {
       : '');
 }
 
-async function loadSettings(): Promise<void> {
-  loading.value = true;
-  const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
-  settings.value = response.settings as Settings;
-  if (settings.value?.language) {
-    setLocale(settings.value.language);
+// 监听 settings 变化
+watch(settings, (newSettings) => {
+  if (newSettings?.language) {
+    setLocale(newSettings.language);
   }
   syncFormFields();
-  await loadScripts();
-  loading.value = false;
-}
+}, { immediate: true });
 
-async function loadScripts(): Promise<void> {
-  const response = await chrome.runtime.sendMessage({ action: 'getScripts' });
-  scripts.value = response.scripts as Script[];
-}
+// 当数据加载完成时设置 loading 为 false
+watch(settings, (newSettings) => {
+  if (newSettings !== null) {
+    loading.value = false;
+  }
+}, { immediate: true });
 
 async function persistSettings(patch: Partial<Settings>): Promise<void> {
   const merged: Settings = {
@@ -236,12 +235,10 @@ async function handleSave(): Promise<void> {
     });
 
     await chrome.runtime.sendMessage({ action: 'syncScripts' });
-    await loadScripts();
 
     setStatus('success', t('successBound'));
     editing.value = false;
-    setTimeout(async () => {
-      await loadSettings();
+    setTimeout(() => {
       clearStatus();
     }, 1000);
   } catch (error) {
@@ -255,15 +252,13 @@ async function handleSync(): Promise<void> {
 
   try {
     await chrome.runtime.sendMessage({ action: 'syncScripts' });
-    await loadScripts();
     await chrome.runtime.sendMessage({
       action: 'saveSettings',
       settings: { ...settings.value, lastSync: new Date().toISOString() },
     });
 
     setStatus('success', t('syncSuccess'));
-    setTimeout(async () => {
-      await loadSettings();
+    setTimeout(() => {
       clearStatus();
     }, 1000);
   } catch (error) {
@@ -286,7 +281,6 @@ async function handleUnbind(): Promise<void> {
   if (!confirm(t('confirmUnbind'))) return;
   await chrome.runtime.sendMessage({ action: 'unbindRepo' });
   editing.value = false;
-  await loadSettings();
 }
 
 async function handleToggleScript(scriptId: string): Promise<void> {
@@ -339,7 +333,7 @@ function validateFileName(fileName: string): { valid: boolean; message?: string 
     return { valid: false, message: t('fileNameInvalid') };
   }
   
-  const duplicate = scripts.value.some(s => 
+  const duplicate = scripts.value.some((s: Script) => 
     s.id !== selectedScriptId.value && 
     (s.fileName === fileName || s.remotePath === fileName)
   );
@@ -429,7 +423,9 @@ async function handleDeleteScript(): Promise<void> {
   }
 }
 
-function handlePushScript(skipDiff = false): void {
+function handlePushScript(skipDiffOrEvent?: unknown): void {
+  const skipDiff = typeof skipDiffOrEvent === 'boolean' ? skipDiffOrEvent : false;
+  
   if (!canPush.value || !selectedScript.value) return;
 
   // Show diff for non-local scripts unless skipDiff is true
@@ -627,14 +623,9 @@ function destroyEditor(): void {
 
 watch(activeTab, () => {
   clearStatus();
-  if (activeTab.value === 'scripts') {
-    loadScripts();
-  }
 });
 
 onMounted(() => {
-  loadSettings();
-  
   document.addEventListener('fullscreenchange', () => {
     isFullscreen.value = !!document.fullscreenElement;
   });
@@ -713,7 +704,7 @@ function closeBatchPushResult(): void {
 async function handleViewDiff(): Promise<void> {
   if (!selectedScriptId.value || selectedScriptId.value === 'new') return;
   
-  const script = scripts.value.find(s => s.id === selectedScriptId.value);
+  const script = scripts.value.find((s: Script) => s.id === selectedScriptId.value);
   if (!script || script.source === ScriptSource.LOCAL) return;
   
   try {

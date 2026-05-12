@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import type { Script } from '../runtime';
-import type { Settings } from '../shared/types';
 import { currentLocale, setLocale, t as translate } from '../shared/i18n';
 import ScriptTree from '../shared/components/ScriptTree.vue';
+import { useSyncedSettings, useSyncedScripts } from '../shared/composables/useSyncedState';
 
-const settings = ref<Settings | null>(null);
-const scripts = ref<Script[]>([]);
+const { settings } = useSyncedSettings();
+const { scripts } = useSyncedScripts();
 const loading = ref(true);
 const syncing = ref(false);
 const userScriptsAllowed = ref(true);
@@ -52,28 +52,25 @@ async function checkUserScriptsAllowed(): Promise<void> {
   }
 }
 
-async function loadData(): Promise<void> {
-  loading.value = true;
-  await checkUserScriptsAllowed();
-  const settingsResponse = await chrome.runtime.sendMessage({ action: 'getSettings' });
-  settings.value = settingsResponse.settings as Settings;
-
-  if (settings.value?.language) {
-    setLocale(settings.value.language);
+// 监听 settings 变化设置语言
+watch(settings, (newSettings) => {
+  if (newSettings?.language) {
+    setLocale(newSettings.language);
   }
+}, { immediate: true });
 
-  if (hasRepo.value) {
-    const scriptsResponse = await chrome.runtime.sendMessage({ action: 'getScripts' });
-    scripts.value = (scriptsResponse.scripts as Script[]) || [];
+// 当数据加载完成时设置 loading 为 false
+watch([settings, scripts], () => {
+  if (settings.value !== null) {
+    loading.value = false;
   }
-  loading.value = false;
-}
+}, { immediate: true });
 
 async function handleSync(): Promise<void> {
   syncing.value = true;
   try {
     await chrome.runtime.sendMessage({ action: 'syncScripts' });
-    await loadData();
+    // 不需要手动 loadData，composable 会自动监听 storage 变化
   } finally {
     syncing.value = false;
   }
@@ -88,7 +85,9 @@ function handleUpdateExpandedDirs(newDirs: Set<string>): void {
   expandedDirs.value = newDirs;
 }
 
-onMounted(loadData);
+onMounted(() => {
+  checkUserScriptsAllowed();
+});
 </script>
 
 <template>
