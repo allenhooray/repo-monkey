@@ -1,19 +1,3 @@
-export interface RepoInfo {
-  owner: string;
-  repo: string;
-}
-
-export interface Script {
-  id: string;
-  name: string;
-  match: string;
-  content: string;
-  fileName: string;
-  sha: string;
-  updatedAt: string;
-  enabled: boolean;
-}
-
 export interface Settings {
   accessToken: string;
   repoInput: string;
@@ -44,12 +28,12 @@ export interface MessageRequest {
   scriptId?: string;
   settings?: Settings;
   url?: string;
-  script?: Script;
+  script?: any;
 }
 
 export interface MessageResponse {
   success?: boolean;
-  scripts?: Script[];
+  scripts?: any[];
   settings?: Settings;
   error?: string;
 }

@@ -1,9 +1,7 @@
-import type { Script } from './types';
-
 (async () => {
   const response = await chrome.runtime.sendMessage({
     action: 'executeScripts',
-    url: window.location.href
+    url: window.location.href,
   });
 
   if (response && response.scripts && response.scripts.length > 0) {
@@ -11,7 +9,7 @@ import type { Script } from './types';
       try {
         await chrome.runtime.sendMessage({
           action: 'injectScript',
-          script: script
+          script: script,
         });
       } catch (error) {
         console.error(`Failed to execute script ${script.name}:`, error);

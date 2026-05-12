@@ -1,7 +1,8 @@
-import type { Script, Settings } from './types';
+import type { Script } from '../runtime';
+import type { Settings } from '../shared/types';
+import { escapeHtml } from '../shared/utils/html-escaper';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const content = document.getElementById('content');
   const settingsBtn = document.getElementById('settingsBtn');
 
   if (settingsBtn) {
@@ -47,8 +48,8 @@ function renderNoRepo(container: HTMLElement): void {
 }
 
 function renderScripts(container: HTMLElement, scripts: Script[], settings: Settings): void {
-  const lastSync = settings.lastSync 
-    ? new Date(settings.lastSync).toLocaleString() 
+  const lastSync = settings.lastSync
+    ? new Date(settings.lastSync).toLocaleString()
     : chrome.i18n.getMessage('never');
 
   container.innerHTML = `
@@ -82,7 +83,7 @@ function renderScripts(container: HTMLElement, scripts: Script[], settings: Sett
     item.innerHTML = `
       <div class="script-info">
         <div class="script-name">${escapeHtml(script.name)}</div>
-        <div class="script-meta">${script.fileName} • ${new Date(script.updatedAt).toLocaleDateString()}</div>
+        <div class="script-meta">${script.fileName} • ${new Date(script.updatedAt || script.createdAt).toLocaleDateString()}</div>
       </div>
       <label class="switch">
         <input type="checkbox" ${script.enabled ? 'checked' : ''} data-id="${script.id}">
@@ -100,10 +101,4 @@ function renderScripts(container: HTMLElement, scripts: Script[], settings: Sett
       }
     });
   });
-}
-
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }

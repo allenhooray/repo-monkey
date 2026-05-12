@@ -1,40 +1,10 @@
-import type { RepoInfo, Settings } from './types';
+import type { Settings } from '../shared/types';
+import { parseRepoInput } from '../shared/utils/repo-parser';
+import { escapeHtml } from '../shared/utils/html-escaper';
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadContent();
 });
-
-function parseRepoInput(input: string): RepoInfo | null {
-  if (!input) return null;
-
-  const trimmed = input.trim();
-
-  const ownerRepoMatch = trimmed.match(/^([a-zA-Z0-9-_.]+)\/([a-zA-Z0-9-_.]+)$/);
-  if (ownerRepoMatch) {
-    return {
-      owner: ownerRepoMatch[1],
-      repo: ownerRepoMatch[2]
-    };
-  }
-
-  const httpsMatch = trimmed.match(/^https?:\/\/github\.com\/([a-zA-Z0-9-_.]+)\/([a-zA-Z0-9-_.]+)(?:\.git)?\/?$/);
-  if (httpsMatch) {
-    return {
-      owner: httpsMatch[1],
-      repo: httpsMatch[2]
-    };
-  }
-
-  const sshMatch = trimmed.match(/^git@github\.com:([a-zA-Z0-9-_.]+)\/([a-zA-Z0-9-_.]+)(?:\.git)?\/?$/);
-  if (sshMatch) {
-    return {
-      owner: sshMatch[1],
-      repo: sshMatch[2]
-    };
-  }
-
-  return null;
-}
 
 async function loadContent(): Promise<void> {
   const content = document.getElementById('content');
@@ -51,7 +21,7 @@ async function loadContent(): Promise<void> {
 }
 
 function renderBindForm(container: HTMLElement, settings: Settings): void {
-  const repoInput = settings.repoInput || 
+  const repoInput = settings.repoInput ||
     (settings.repoOwner && settings.repoName ? `${settings.repoOwner}/${settings.repoName}` : '');
 
   container.innerHTML = `
@@ -112,8 +82,8 @@ function renderBindForm(container: HTMLElement, settings: Settings): void {
             repoInput: repoInputValue,
             repoOwner: parsed.owner,
             repoName: parsed.repo,
-            lastSync: new Date().toISOString()
-          }
+            lastSync: new Date().toISOString(),
+          },
         });
 
         await chrome.runtime.sendMessage({ action: 'syncScripts' });
@@ -129,8 +99,8 @@ function renderBindForm(container: HTMLElement, settings: Settings): void {
 
 function renderBoundRepo(container: HTMLElement, settings: Settings): void {
   const repoUrl = `https://github.com/${settings.repoOwner}/${settings.repoName}`;
-  const lastSync = settings.lastSync 
-    ? new Date(settings.lastSync).toLocaleString() 
+  const lastSync = settings.lastSync
+    ? new Date(settings.lastSync).toLocaleString()
     : chrome.i18n.getMessage('never');
 
   container.innerHTML = `
@@ -160,17 +130,17 @@ function renderBoundRepo(container: HTMLElement, settings: Settings): void {
     syncBtn.addEventListener('click', async () => {
       const status = document.getElementById('status');
       if (!status) return;
-      
+
       status.innerHTML = `<div class="loading">${chrome.i18n.getMessage('syncing')}</div>`;
-      
+
       try {
         await chrome.runtime.sendMessage({ action: 'syncScripts' });
-        
+
         const updatedSettingsResponse = await chrome.runtime.sendMessage({
           action: 'saveSettings',
-          settings: { ...settings, lastSync: new Date().toISOString() }
+          settings: { ...settings, lastSync: new Date().toISOString() },
         });
-        
+
         status.innerHTML = `<div class="status success">${chrome.i18n.getMessage('syncSuccess')}</div>`;
         setTimeout(() => loadContent(), 1000);
       } catch (error) {
@@ -193,10 +163,4 @@ function renderBoundRepo(container: HTMLElement, settings: Settings): void {
       }
     });
   }
-}
-
-function escapeHtml(text: string | null | undefined): string {
-  const div = document.createElement('div');
-  div.textContent = text || '';
-  return div.innerHTML;
 }
