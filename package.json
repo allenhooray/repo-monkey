@@ -1,39 +1,14 @@
 {
-  "name": "repo-monkey",
+  "name": "repo-monkey-workspace",
   "private": true,
   "version": "1.0.0",
-  "description": "Chrome extension that manages userscripts via GitHub",
+  "description": "Workspace for the Repo Monkey extension and website",
   "type": "module",
   "packageManager": "pnpm@9.12.0",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "build:zip": "vite build && node scripts/zip.js",
-    "type-check": "vue-tsc --noEmit"
-  },
-  "devDependencies": {
-    "@crxjs/vite-plugin": "^2.0.0-beta.28",
-    "@types/chrome": "^0.1.42",
-    "@types/node": "^22.9.0",
-    "@vitejs/plugin-vue": "^6.0.6",
-    "archiver": "^7.0.1",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.10",
-    "vue-tsc": "^3.2.8"
-  },
-  "dependencies": {
-    "@codemirror/autocomplete": "^6.20.2",
-    "@codemirror/commands": "^6.10.3",
-    "@codemirror/fold": "^0.19.4",
-    "@codemirror/lang-javascript": "^6.2.5",
-    "@codemirror/language": "^6.12.3",
-    "@codemirror/lint": "^6.9.6",
-    "@codemirror/search": "^6.7.0",
-    "@codemirror/state": "^6.6.0",
-    "@codemirror/view": "^6.42.1",
-    "@lezer/javascript": "^1.5.4",
-    "codemirror": "^6.0.2",
-    "diff": "^9.0.0",
-    "vue": "^3.5.34"
+    "dev": "pnpm --filter @repo-monkey/extension dev",
+    "build": "pnpm --filter @repo-monkey/extension build",
+    "build:zip": "pnpm --filter @repo-monkey/extension build:zip",
+    "type-check": "pnpm --filter @repo-monkey/extension type-check"
   }
 }

@@ -6,7 +6,9 @@ settings:
 
 importers:
 
-  .:
+  .: {}
+
+  packages/extension:
     dependencies:
       '@codemirror/autocomplete':
         specifier: ^6.20.2
