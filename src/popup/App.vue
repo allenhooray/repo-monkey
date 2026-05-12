@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import type { Script } from '../runtime';
 import type { Settings } from '../shared/types';
 import { currentLocale, setLocale, t as translate } from '../shared/i18n';
-import { buildTree, flattenTree, type TreeNode } from '../shared';
+import ScriptTree from '../shared/components/ScriptTree.vue';
 
 const settings = ref<Settings | null>(null);
 const scripts = ref<Script[]>([]);
@@ -23,14 +23,6 @@ const lastSyncText = computed(() => {
   return settings.value?.lastSync
     ? new Date(settings.value.lastSync).toLocaleString()
     : t('never');
-});
-
-const scriptTree = computed(() => {
-  return buildTree<Script>(scripts.value, 'remotePath');
-});
-
-const flattenedTree = computed(() => {
-  return flattenTree(scriptTree.value);
 });
 
 function t(key: string): string {
@@ -92,37 +84,8 @@ async function handleToggle(scriptId: string): Promise<void> {
   scripts.value = response.scripts as Script[];
 }
 
-function formatDate(script: Script): string {
-  return new Date(script.updatedAt || script.createdAt).toLocaleDateString();
-}
-
-function toggleDir(dirId: string): void {
-  if (expandedDirs.value.has(dirId)) {
-    expandedDirs.value.delete(dirId);
-  } else {
-    expandedDirs.value.add(dirId);
-  }
-  // 触发响应式更新
-  expandedDirs.value = new Set(expandedDirs.value);
-}
-
-function isDirExpanded(dirId: string): boolean {
-  return expandedDirs.value.has(dirId);
-}
-
-function shouldShowNode(node: TreeNode<Script> & { depth: number }): boolean {
-  // 根节点不显示
-  if (node.id === 'root') return false;
-  
-  // 检查父目录是否展开
-  const pathParts = node.path.split('/').filter(Boolean);
-  for (let i = 0; i < pathParts.length - 1; i++) {
-    const parentPath = pathParts.slice(0, i + 1).join('/');
-    if (!expandedDirs.value.has(parentPath)) {
-      return false;
-    }
-  }
-  return true;
+function handleUpdateExpandedDirs(newDirs: Set<string>): void {
+  expandedDirs.value = newDirs;
 }
 
 onMounted(loadData);
@@ -171,41 +134,13 @@ onMounted(loadData);
           {{ t('noScriptsFound') }}
         </p>
 
-        <div v-else class="script-list">
-          <template v-for="node in flattenedTree" :key="node.id">
-            <div
-              v-if="shouldShowNode(node)"
-              :class="['tree-node', { 'tree-node-dir': node.type === 'dir' }]"
-              :style="{ paddingLeft: `${(node.depth - 1) * 16}px` }"
-            >
-              <template v-if="node.type === 'dir'">
-              <span class="dir-toggle" @click="toggleDir(node.id)">
-                <span class="chevron" :class="{ expanded: isDirExpanded(node.id) }"></span>
-              </span>
-              <span class="dir-icon"></span>
-              <span class="dir-name">{{ node.name }}</span>
-            </template>
-            <template v-else-if="node.file">
-              <span class="dir-toggle-placeholder"></span>
-              <span class="file-icon"></span>
-              <div class="script-info">
-                <div class="script-name">{{ node.file.name }}</div>
-                <div class="script-meta">
-                  {{ node.file.fileName }} • {{ formatDate(node.file) }}
-                </div>
-              </div>
-              <label class="switch">
-                <input
-                  type="checkbox"
-                  :checked="node.file.enabled"
-                  @change="handleToggle(node.file.id)"
-                />
-                <span class="slider"></span>
-              </label>
-            </template>
-            </div>
-          </template>
-        </div>
+        <script-tree
+          v-else
+          :scripts="scripts"
+          v-model:expanded-dirs="expandedDirs"
+          @toggle-script="handleToggle"
+          @update:expanded-dirs="handleUpdateExpandedDirs"
+        ></script-tree>
       </template>
     </div>
   </div>
@@ -236,184 +171,5 @@ onMounted(loadData);
   font-size: 12px;
   color: #ccc;
   margin: 0;
-}
-
-.tree-node {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  user-select: none;
-  min-height: 22px;
-}
-
-.tree-node:hover {
-  background: #2a2d2e;
-}
-
-.tree-node-dir {
-  cursor: pointer;
-}
-
-.dir-toggle {
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.dir-toggle-placeholder {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
-.chevron {
-  width: 0;
-  height: 0;
-  border-left: 4px solid #6e7681;
-  border-top: 4px solid transparent;
-  border-bottom: 4px solid transparent;
-  transition: transform 0.1s ease;
-}
-
-.chevron.expanded {
-  transform: rotate(90deg);
-}
-
-.dir-icon {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  position: relative;
-}
-
-.dir-icon::before {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 1px;
-  width: 12px;
-  height: 8px;
-  background: #d29922;
-  border-radius: 2px 2px 0 0;
-}
-
-.dir-icon::after {
-  content: '';
-  position: absolute;
-  top: 5px;
-  left: 0;
-  width: 14px;
-  height: 9px;
-  background: #e3b341;
-  border-radius: 0 2px 2px 2px;
-}
-
-.file-icon {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  position: relative;
-}
-
-.file-icon::before {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 10px;
-  height: 12px;
-  background: #4d9375;
-  border-radius: 0 2px 2px 2px;
-}
-
-.file-icon::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  width: 4px;
-  height: 4px;
-  background: #1e1e1e;
-  border-left: 1px solid #4d9375;
-  border-bottom: 1px solid #4d9375;
-  transform: skewY(-45deg);
-}
-
-.dir-name {
-  font-weight: 500;
-  color: #e0e0e0;
-  font-size: 13px;
-}
-
-.script-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.script-name {
-  font-size: 13px;
-  font-weight: 500;
-  color: #e0e0e0;
-}
-
-.script-meta {
-  font-size: 11px;
-  color: #6e7681;
-}
-
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 32px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #373e47;
-  transition: 0.2s;
-  border-radius: 9px;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 14px;
-  width: 14px;
-  left: 2px;
-  bottom: 2px;
-  background-color: #adbac7;
-  transition: 0.2s;
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: #2ecc71;
-}
-
-input:checked + .slider:before {
-  transform: translateX(14px);
-  background-color: white;
 }
 </style>

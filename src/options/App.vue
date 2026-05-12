@@ -10,9 +10,9 @@ import type { Locale, Settings, BatchPushResult } from '../shared/types';
 import { availableLocales, currentLocale, setLocale, t as translate } from '../shared/i18n';
 import { parseRepoInput } from '../shared/utils/repo-parser';
 import { ScriptSource } from '../shared/constants';
-import { buildTree, flattenTree, type TreeNode } from '../shared';
 import type { Script } from '../runtime';
 import { diffLines } from 'diff';
+import ScriptTree from '../shared/components/ScriptTree.vue';
 
 type StatusType = 'success' | 'error' | 'loading' | '';
 type TabKey = 'general' | 'repository' | 'scripts';
@@ -83,43 +83,6 @@ const lastSyncText = computed(() => {
   return settings.value?.lastSync
     ? new Date(settings.value.lastSync).toLocaleString()
     : t('never');
-});
-
-const scriptTree = computed(() => {
-  return buildTree<Script>(scripts.value, 'remotePath');
-});
-
-const flattenedTree = computed(() => {
-  return flattenTree(scriptTree.value);
-});
-
-const filteredTree = computed(() => {
-  if (!searchQuery.value) {
-    return flattenedTree.value;
-  }
-  
-  // 如果有搜索，先找到匹配的文件，然后显示它们及其父目录
-  const query = searchQuery.value.toLowerCase();
-  const matchingPaths = new Set<string>();
-  
-  for (const node of flattenedTree.value) {
-    if (node.type === 'file' && node.file) {
-      const name = node.file.name.toLowerCase();
-      const fileName = node.file.fileName.toLowerCase();
-      if (name.includes(query) || fileName.includes(query)) {
-        // 添加匹配文件
-        matchingPaths.add(node.path);
-        // 添加所有父目录
-        const parts = node.path.split('/').filter(Boolean);
-        for (let i = 0; i < parts.length; i++) {
-          const parentPath = parts.slice(0, i + 1).join('/');
-          matchingPaths.add(parentPath);
-        }
-      }
-    }
-  }
-  
-  return flattenedTree.value.filter(node => matchingPaths.has(node.path) || node.id === 'root');
 });
 
 const selectedScript = computed(() => {
@@ -811,38 +774,8 @@ async function handlePullFromGitHub(): Promise<void> {
   }
 }
 
-function toggleDir(dirId: string): void {
-  if (expandedDirs.value.has(dirId)) {
-    expandedDirs.value.delete(dirId);
-  } else {
-    expandedDirs.value.add(dirId);
-  }
-  // 触发响应式更新
-  expandedDirs.value = new Set(expandedDirs.value);
-}
-
-function isDirExpanded(dirId: string): boolean {
-  return expandedDirs.value.has(dirId);
-}
-
-function shouldShowNode(node: TreeNode<Script> & { depth: number }): boolean {
-  // 根节点不显示
-  if (node.id === 'root') return false;
-  
-  // 如果有搜索，直接显示所有匹配的节点
-  if (searchQuery.value) {
-    return true;
-  }
-  
-  // 检查父目录是否展开
-  const pathParts = node.path.split('/').filter(Boolean);
-  for (let i = 0; i < pathParts.length - 1; i++) {
-    const parentPath = pathParts.slice(0, i + 1).join('/');
-    if (!expandedDirs.value.has(parentPath)) {
-      return false;
-    }
-  }
-  return true;
+function handleUpdateExpandedDirs(newDirs: Set<string>): void {
+  expandedDirs.value = newDirs;
 }
 </script>
 
@@ -1015,59 +948,17 @@ function shouldShowNode(node: TreeNode<Script> & { depth: number }): boolean {
                 </div>
               </div>
               
-              <div class="script-list">
-          <template v-for="node in filteredTree" :key="node.id">
-            <div
-              v-if="shouldShowNode(node)"
-              :class="['tree-node', {
-                'tree-node-dir': node.type === 'dir',
-                'tree-node-file': node.type === 'file',
-                'active': node.type === 'file' && node.file && selectedScriptId === node.file.id,
-                'orphan': node.type === 'file' && node.file && node.file.orphan
-              }]"
-              :style="{ paddingLeft: `${(node.depth - 1) * 16}px` }"
-              @click="node.type === 'file' && node.file ? handleSelectScript(node.file.id) : null"
-            >
-              <template v-if="node.type === 'dir'">
-                <span class="dir-toggle" @click.stop="toggleDir(node.id)">
-                  <span class="chevron" :class="{ expanded: isDirExpanded(node.id) || searchQuery.value }"></span>
-                </span>
-                <span class="dir-icon"></span>
-                <span class="dir-name">{{ node.name }}</span>
-              </template>
-              <template v-else-if="node.file">
-                <span class="dir-toggle-placeholder"></span>
-                <span class="file-icon"></span>
-                <div class="script-item-content">
-                  <div class="script-item-header">
-                    <input
-                      type="checkbox"
-                      :checked="node.file.enabled"
-                      @click.stop
-                      @change="handleToggleScript(node.file.id)"
-                      class="script-toggle"
-                    />
-                    <span class="script-name">{{ node.file.name }}</span>
-                    <span v-if="node.file.orphan" class="orphan-badge">Orphan</span>
-                  </div>
-                  <div class="script-item-meta">
-                    <span
-                      :class="['source-tag', {
-                        'source-tag-local': node.file.source === ScriptSource.LOCAL,
-                        'source-tag-remote': node.file.source === ScriptSource.REMOTE,
-                        'source-tag-modified': node.file.source === ScriptSource.MODIFIED,
-                      }]"
-                    >
-                      {{ node.file.source === ScriptSource.LOCAL ? t('labelLocal') :
-                         node.file.source === ScriptSource.MODIFIED ? t('labelModified') : t('labelRemote') }}
-                    </span>
-                    <span class="script-filename">{{ node.file.fileName }}</span>
-                  </div>
-                </div>
-              </template>
-            </div>
-          </template>
-        </div>
+              <script-tree
+                :scripts="scripts"
+                v-model:expanded-dirs="expandedDirs"
+                :search-query="searchQuery"
+                :show-status-tags="true"
+                :selected-script-id="selectedScriptId"
+                :t="t"
+                @toggle-script="handleToggleScript"
+                @select-script="handleSelectScript"
+                @update:expanded-dirs="handleUpdateExpandedDirs"
+              ></script-tree>
             </div>
             
             <!-- Editor panel -->
