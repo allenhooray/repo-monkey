@@ -1,18 +1,23 @@
 import { syncScripts } from '../services/sync-service';
 import { getScripts, toggleScript } from '../services/script-service';
 import { getSettings, saveSettings, unbindRepo } from '../services/storage-service';
-import { executeScripts, injectScript } from '../services/execution-service';
+import { syncRegistrations, clearRegistrations } from '../services/execution-service';
 import { handleGMBridgeRequest } from '../services/gm-bridge-service';
 import type { MessageRequest, MessageResponse } from '../../shared/types';
 
 export function setupMessageHandler(): void {
   chrome.runtime.onMessage.addListener(
-    (request: MessageRequest, sender, sendResponse: (response: any) => void) => {
+    (request: MessageRequest, _sender, sendResponse: (response: any) => void) => {
       let handled = false;
 
       switch (request.action) {
         case 'syncScripts':
-          syncScripts().then(() => sendResponse({ success: true }));
+          syncScripts()
+            .then(() => syncRegistrations())
+            .then(() => sendResponse({ success: true }))
+            .catch((error: Error) =>
+              sendResponse({ success: false, error: error.message }),
+            );
           handled = true;
           break;
         case 'getScripts':
@@ -21,7 +26,14 @@ export function setupMessageHandler(): void {
           break;
         case 'toggleScript':
           if (request.scriptId) {
-            toggleScript(request.scriptId).then(scripts => sendResponse({ scripts }));
+            toggleScript(request.scriptId)
+              .then(async (scripts) => {
+                await syncRegistrations();
+                sendResponse({ scripts });
+              })
+              .catch((error: Error) =>
+                sendResponse({ success: false, error: error.message }),
+              );
           }
           handled = true;
           break;
@@ -36,19 +48,14 @@ export function setupMessageHandler(): void {
           handled = true;
           break;
         case 'unbindRepo':
-          unbindRepo().then(response => sendResponse(response));
-          handled = true;
-          break;
-        case 'executeScripts':
-          if (request.url) {
-            executeScripts(request.url).then(scripts => sendResponse({ scripts }));
-          }
-          handled = true;
-          break;
-        case 'injectScript':
-          if (request.script && sender.tab?.id) {
-            injectScript(request.script, sender.tab.id).then(response => sendResponse(response as MessageResponse));
-          }
+          unbindRepo()
+            .then(async (response) => {
+              await clearRegistrations();
+              sendResponse(response as MessageResponse);
+            })
+            .catch((error: Error) =>
+              sendResponse({ success: false, error: error.message }),
+            );
           handled = true;
           break;
         case 'gmBridge':

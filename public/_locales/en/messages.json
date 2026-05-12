@@ -166,5 +166,17 @@
   "cancel": {
     "message": "Cancel",
     "description": "Cancel button"
+  },
+  "userScriptsPermissionTitle": {
+    "message": "Enable \"Allow User Scripts\"",
+    "description": "Title for user scripts permission notice"
+  },
+  "userScriptsPermissionDesc": {
+    "message": "To run scripts from your repository, please open the extension details page and turn on the \"Allow User Scripts\" toggle.",
+    "description": "Description for user scripts permission notice"
+  },
+  "openExtensionDetails": {
+    "message": "Open extension details",
+    "description": "Link text to open extension details page"
   }
 }

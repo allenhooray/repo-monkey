@@ -1,31 +1,18 @@
-import { ScriptManager, ChromeAdapter, UrlMatcher, ScriptExecutor } from '../../runtime';
+import { ChromeAdapter, ScriptRegistrar } from '../../runtime';
 import { getScripts } from './script-service';
-import type { Script } from '../../runtime';
-import type { MessageResponse } from '../../shared/types';
 
 const adapter = new ChromeAdapter();
-const urlMatcher = new UrlMatcher();
-const scriptExecutor = new ScriptExecutor(adapter);
+const registrar = new ScriptRegistrar(adapter);
 
-export async function executeScripts(url: string): Promise<Script[]> {
+export async function syncRegistrations(): Promise<void> {
   const scripts = await getScripts();
-  return scripts.filter(script => {
-    if (!script.enabled) return false;
-    const matchPattern = Array.isArray(script.metadata.match)
-      ? script.metadata.match
-      : [script.metadata.match];
-    return matchPattern.some(pattern => urlMatcher.matches(pattern, url));
-  });
+  await registrar.sync(scripts);
 }
 
-export async function injectScript(script: Script, tabId: number): Promise<MessageResponse> {
-  try {
-    const tabAdapter = new ChromeAdapter(tabId);
-    const executor = new ScriptExecutor(tabAdapter);
-    await executor.execute(script);
-    return { success: true };
-  } catch (error) {
-    console.error(`Failed to inject script ${script.name}:`, error);
-    return { success: false, error: (error as Error).message };
-  }
+export async function clearRegistrations(): Promise<void> {
+  await registrar.clear();
+}
+
+export function getAdapter(): ChromeAdapter {
+  return adapter;
 }

@@ -121,28 +121,9 @@ async function gmOpenInTab(url: string, options: { active?: boolean }): Promise<
   return { tabId: tab.id };
 }
 
-async function gmSetClipboard(text: string): Promise<void> {
-  // Service worker has no DOM; use offscreen-free fallback via scripting on the active tab.
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) throw new Error('No active tab to write clipboard');
-  await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: (value: string) => {
-      const ta = document.createElement('textarea');
-      ta.value = value;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      try {
-        document.execCommand('copy');
-      } finally {
-        ta.remove();
-      }
-    },
-    args: [text],
-    world: 'MAIN',
-  });
+async function gmSetClipboard(_text: string): Promise<void> {
+  // Clipboard writes are performed directly in the user script world now.
+  // This handler is kept only as a no-op fallback for compatibility.
 }
 
 async function gmNotification(details: GMNotificationDetails): Promise<{ clicked: boolean }> {

@@ -23,16 +23,12 @@ export type MessageAction =
   | 'getSettings'
   | 'saveSettings'
   | 'unbindRepo'
-  | 'executeScripts'
-  | 'injectScript'
   | 'gmBridge';
 
 export interface MessageRequest {
   action: MessageAction;
   scriptId?: string;
   settings?: Settings;
-  url?: string;
-  script?: any;
   request?: any;
 }
 

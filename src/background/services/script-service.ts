@@ -1,9 +1,6 @@
-import { ScriptManager, MetadataParser, ChromeAdapter } from '../../runtime';
+import { MetadataParser } from '../../runtime';
 import { STORAGE_KEY_SCRIPTS } from '../../shared/constants';
 import type { Script } from '../../runtime';
-
-const adapter = new ChromeAdapter();
-const scriptManager = new ScriptManager(adapter);
 
 export async function getScripts(): Promise<Script[]> {
   const result = await chrome.storage.local.get(STORAGE_KEY_SCRIPTS);

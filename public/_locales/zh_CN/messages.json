@@ -166,5 +166,17 @@
   "cancel": {
     "message": "取消",
     "description": "取消按钮"
+  },
+  "userScriptsPermissionTitle": {
+    "message": "请启用「允许用户脚本」",
+    "description": "用户脚本权限提示标题"
+  },
+  "userScriptsPermissionDesc": {
+    "message": "为了运行仓库中的脚本，请前往扩展详情页开启「允许用户脚本」开关。",
+    "description": "用户脚本权限提示描述"
+  },
+  "openExtensionDetails": {
+    "message": "打开扩展详情页",
+    "description": "打开扩展详情页链接文字"
   }
 }

@@ -8,6 +8,7 @@ const settings = ref<Settings | null>(null);
 const scripts = ref<Script[]>([]);
 const loading = ref(true);
 const syncing = ref(false);
+const userScriptsAllowed = ref(true);
 
 const hasRepo = computed(
   () =>
@@ -31,8 +32,27 @@ function openOptions(): void {
   chrome.runtime.openOptionsPage();
 }
 
+function openExtensionDetails(): void {
+  const url = `chrome://extensions/?id=${chrome.runtime.id}`;
+  chrome.tabs.create({ url });
+}
+
+async function checkUserScriptsAllowed(): Promise<void> {
+  try {
+    if (!chrome.userScripts) {
+      userScriptsAllowed.value = false;
+      return;
+    }
+    await chrome.userScripts.getScripts();
+    userScriptsAllowed.value = true;
+  } catch {
+    userScriptsAllowed.value = false;
+  }
+}
+
 async function loadData(): Promise<void> {
   loading.value = true;
+  await checkUserScriptsAllowed();
   const settingsResponse = await chrome.runtime.sendMessage({ action: 'getSettings' });
   settings.value = settingsResponse.settings as Settings;
 
@@ -77,6 +97,14 @@ onMounted(loadData);
 
     <div id="content">
       <div v-if="loading" class="loading">...</div>
+
+      <div v-else-if="!userScriptsAllowed" class="permission-notice">
+        <div class="permission-title">{{ t('userScriptsPermissionTitle') }}</div>
+        <p class="permission-desc">{{ t('userScriptsPermissionDesc') }}</p>
+        <button class="btn btn-primary" @click="openExtensionDetails">
+          {{ t('openExtensionDetails') }}
+        </button>
+      </div>
 
       <div v-else-if="!hasRepo" class="no-repo">
         <p>{{ t('noRepoBound') }}</p>
@@ -134,5 +162,26 @@ onMounted(loadData);
 .empty-hint {
   text-align: center;
   color: #888;
+}
+
+.permission-notice {
+  padding: 16px;
+  border-radius: 8px;
+  background: rgba(241, 196, 15, 0.12);
+  border: 1px solid rgba(241, 196, 15, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.permission-title {
+  font-weight: 600;
+  color: #f1c40f;
+}
+
+.permission-desc {
+  font-size: 12px;
+  color: #ccc;
+  margin: 0;
 }
 </style>

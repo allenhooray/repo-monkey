@@ -1,43 +1,69 @@
-import type { RuntimeAdapter } from '../types/adapter';
+import type { RuntimeAdapter, RegisteredUserScriptEntry } from '../types/adapter';
+
+const USER_SCRIPT_ID_PREFIX = 'repo-monkey-';
+
+function toUserScriptId(scriptId: string): string {
+  return `${USER_SCRIPT_ID_PREFIX}${scriptId}`;
+}
+
+function isUserScriptsAvailable(): boolean {
+  return typeof chrome !== 'undefined' && !!chrome.userScripts;
+}
 
 export class ChromeAdapter implements RuntimeAdapter {
-  private tabId?: number;
-
-  constructor(tabId?: number) {
-    this.tabId = tabId;
+  async ensureWorldConfigured(): Promise<void> {
+    if (!isUserScriptsAvailable()) return;
+    try {
+      await chrome.userScripts.configureWorld({ messaging: true });
+    } catch (error) {
+      console.warn('[RepoMonkey] configureWorld failed:', error);
+    }
   }
 
-  async injectScript(wrappedCode: string, name: string): Promise<void> {
-    let targetTabId = this.tabId;
-
-    if (!targetTabId) {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!tab.id) {
-        throw new Error('No active tab found');
-      }
-      targetTabId = tab.id;
+  async registerScripts(entries: RegisteredUserScriptEntry[]): Promise<void> {
+    if (!isUserScriptsAvailable()) {
+      throw new Error('chrome.userScripts API not available. Enable "Allow User Scripts" in extension details.');
     }
 
-    await chrome.scripting.executeScript({
-      target: { tabId: targetTabId },
-      func: (code: string, scriptName: string) => {
-        try {
-          const script = document.createElement('script');
-          script.setAttribute('data-repo-monkey', scriptName);
-          script.textContent = code;
-          (document.head || document.documentElement || document.body).appendChild(script);
-          script.parentNode?.removeChild(script);
-        } catch (error) {
-          console.error('[RepoMonkey] Failed to inject script ' + scriptName + ':', error);
-        }
-      },
-      args: [wrappedCode, name],
-      world: 'MAIN',
-    });
+    await this.ensureWorldConfigured();
+
+    const existing = await chrome.userScripts.getScripts();
+    const existingIds = new Set(
+      existing
+        .map((s) => s.id)
+        .filter((id) => id.startsWith(USER_SCRIPT_ID_PREFIX)),
+    );
+    if (existingIds.size > 0) {
+      await chrome.userScripts.unregister({ ids: Array.from(existingIds) });
+    }
+
+    if (entries.length === 0) return;
+
+    const registrations = entries.map((entry) => ({
+      id: toUserScriptId(entry.scriptId),
+      matches: entry.matches,
+      js: [{ code: entry.code }],
+      runAt: entry.runAt,
+      world: 'USER_SCRIPT' as const,
+      allFrames: false,
+    }));
+
+    await chrome.userScripts.register(registrations);
   }
 
-  getCurrentUrl(): string {
-    return window.location.href;
+  async unregisterAll(): Promise<void> {
+    if (!isUserScriptsAvailable()) return;
+    try {
+      const existing = await chrome.userScripts.getScripts();
+      const ids = existing
+        .map((s) => s.id)
+        .filter((id) => id.startsWith(USER_SCRIPT_ID_PREFIX));
+      if (ids.length > 0) {
+        await chrome.userScripts.unregister({ ids });
+      }
+    } catch (error) {
+      console.warn('[RepoMonkey] unregisterAll failed:', error);
+    }
   }
 
   storage = {

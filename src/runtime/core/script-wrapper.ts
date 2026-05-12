@@ -2,44 +2,38 @@ import type { Script } from '../types/script';
 
 const GM_RUNTIME_SOURCE = `
 (function initGMRuntime(scriptId, scriptName, scriptMetaStr, metadata, grants) {
-  if (!window.__repoMonkeyGM__) {
-    window.__repoMonkeyGM__ = {
-      pending: new Map(),
-      nextId: 1,
-      init: false,
-    };
-  }
-  var hub = window.__repoMonkeyGM__;
-
-  if (!hub.init) {
-    hub.init = true;
-    window.addEventListener('message', function (event) {
-      if (event.source !== window) return;
-      var data = event.data;
-      if (!data || data.channel !== 'gm-bridge' || data.direction !== 'response') return;
-      var resolver = hub.pending.get(data.id);
-      if (!resolver) return;
-      hub.pending.delete(data.id);
-      if (data.ok) {
-        resolver.resolve(data.result);
-      } else {
-        resolver.reject(new Error(data.error || 'GM bridge error'));
-      }
-    });
-  }
-
   function callBridge(type, payload) {
     return new Promise(function (resolve, reject) {
-      var id = 'gm_' + scriptId + '_' + (hub.nextId++);
-      hub.pending.set(id, { resolve: resolve, reject: reject });
-      window.postMessage({
-        channel: 'gm-bridge',
-        direction: 'request',
-        id: id,
-        scriptId: scriptId,
-        type: type,
-        payload: payload,
-      }, '*');
+      try {
+        chrome.runtime.sendMessage({
+          action: 'gmBridge',
+          request: {
+            channel: 'gm-bridge',
+            direction: 'request',
+            id: 'gm_' + scriptId + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+            scriptId: scriptId,
+            type: type,
+            payload: payload,
+          },
+        }, function (response) {
+          var lastError = chrome.runtime && chrome.runtime.lastError;
+          if (lastError) {
+            reject(new Error(lastError.message));
+            return;
+          }
+          if (!response) {
+            reject(new Error('no response'));
+            return;
+          }
+          if (response.ok) {
+            resolve(response.result);
+          } else {
+            reject(new Error(response.error || 'GM bridge error'));
+          }
+        });
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
@@ -100,7 +94,26 @@ const GM_RUNTIME_SOURCE = `
 
   function GM_setClipboard(text) {
     if (!isGranted('GM_setClipboard')) return;
-    return callBridge('GM_setClipboard', { text: String(text) });
+    var value = String(text);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(value);
+      }
+    } catch (_e) {
+      // fall through to textarea fallback
+    }
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = value;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      (document.body || document.documentElement).appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    } catch (e) {
+      console.error('[' + scriptName + '] GM_setClipboard failed:', e);
+    }
   }
 
   function GM_notification(detailsOrText, title) {

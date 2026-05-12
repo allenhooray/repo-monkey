@@ -1,5 +1,5 @@
 export { ScriptManager } from './core/script-manager';
-export { ScriptExecutor } from './core/script-executor';
+export { ScriptRegistrar, buildRegistrationEntries } from './core/script-executor';
 export { wrapScript } from './core/script-wrapper';
 export {
   GM_BRIDGE_CHANNEL,
@@ -12,7 +12,6 @@ export { MetadataParser } from './parsers/metadata-parser';
 export { UrlMatcher } from './parsers/url-matcher';
 export { ChromeAdapter } from './adapters/chrome-adapter';
 export { createAdapter } from './adapters/adapter';
-export type { RuntimeAdapter } from './adapters/adapter';
 export * from './types/script';
 export * from './types/metadata';
 export * from './types/adapter';
