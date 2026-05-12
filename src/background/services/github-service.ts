@@ -134,6 +134,34 @@ export async function pushScriptToRepo(
   }
 }
 
+async function fetchDirectoryContents(
+  settings: Settings,
+  path: string,
+  headers: Record<string, string>
+): Promise<GitHubFile[]> {
+  const response = await fetch(
+    `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/contents/${path}`,
+    { headers }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${path}`);
+  }
+
+  const items = await response.json();
+  const allFiles: GitHubFile[] = [];
+
+  for (const item of items) {
+    allFiles.push(item);
+    if (item.type === 'dir') {
+      const subFiles = await fetchDirectoryContents(settings, item.path, headers);
+      allFiles.push(...subFiles);
+    }
+  }
+
+  return allFiles;
+}
+
 export async function fetchFilesFromRepo(settings: Settings): Promise<GitHubFile[]> {
   const headers = {
     Authorization: `Bearer ${settings.accessToken}`,
@@ -143,24 +171,15 @@ export async function fetchFilesFromRepo(settings: Settings): Promise<GitHubFile
   let files: GitHubFile[] = [];
 
   try {
-    const outputResponse = await fetch(
-      `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/contents/output`,
-      { headers }
-    );
-    if (outputResponse.ok) {
-      files = await outputResponse.json();
-    }
+    files = await fetchDirectoryContents(settings, 'output', headers);
     if (files.length === 0) {
       throw new Error('No files found in output directory');
     }
   } catch (e) {
-    const rootResponse = await fetch(
-      `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/contents/`,
-      { headers }
-    );
-    if (rootResponse.ok) {
-      const allFiles = await rootResponse.json();
-      files = allFiles.filter((file: GitHubFile) => file.name.endsWith('.js'));
+    try {
+      files = await fetchDirectoryContents(settings, '', headers);
+    } catch (rootErr) {
+      console.error('Failed to fetch root directory:', rootErr);
     }
   }
 

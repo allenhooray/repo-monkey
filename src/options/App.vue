@@ -10,6 +10,7 @@ import type { Locale, Settings, BatchPushResult } from '../shared/types';
 import { availableLocales, currentLocale, setLocale, t as translate } from '../shared/i18n';
 import { parseRepoInput } from '../shared/utils/repo-parser';
 import { ScriptSource } from '../shared/constants';
+import { buildTree, flattenTree, type TreeNode } from '../shared';
 import type { Script } from '../runtime';
 import { diffLines } from 'diff';
 
@@ -31,6 +32,7 @@ const searchQuery = ref('');
 const isFullscreen = ref(false);
 const editorContainer = ref<HTMLElement | null>(null);
 let editorView: EditorView | null = null;
+const expandedDirs = ref<Set<string>>(new Set());
 
 const pushStatus = ref<PushStatus>('idle');
 const commitMessageInput = ref('');
@@ -83,11 +85,41 @@ const lastSyncText = computed(() => {
     : t('never');
 });
 
-const filteredScripts = computed(() => {
-  return scripts.value.filter(script =>
-    script.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    script.fileName.toLowerCase().includes(searchQuery.value.toLowerCase())
-  );
+const scriptTree = computed(() => {
+  return buildTree<Script>(scripts.value, 'remotePath');
+});
+
+const flattenedTree = computed(() => {
+  return flattenTree(scriptTree.value);
+});
+
+const filteredTree = computed(() => {
+  if (!searchQuery.value) {
+    return flattenedTree.value;
+  }
+  
+  // 如果有搜索，先找到匹配的文件，然后显示它们及其父目录
+  const query = searchQuery.value.toLowerCase();
+  const matchingPaths = new Set<string>();
+  
+  for (const node of flattenedTree.value) {
+    if (node.type === 'file' && node.file) {
+      const name = node.file.name.toLowerCase();
+      const fileName = node.file.fileName.toLowerCase();
+      if (name.includes(query) || fileName.includes(query)) {
+        // 添加匹配文件
+        matchingPaths.add(node.path);
+        // 添加所有父目录
+        const parts = node.path.split('/').filter(Boolean);
+        for (let i = 0; i < parts.length; i++) {
+          const parentPath = parts.slice(0, i + 1).join('/');
+          matchingPaths.add(parentPath);
+        }
+      }
+    }
+  }
+  
+  return flattenedTree.value.filter(node => matchingPaths.has(node.path) || node.id === 'root');
 });
 
 const selectedScript = computed(() => {
@@ -778,6 +810,40 @@ async function handlePullFromGitHub(): Promise<void> {
     setStatus('error', `${t('error')} ${(error as Error).message}`);
   }
 }
+
+function toggleDir(dirId: string): void {
+  if (expandedDirs.value.has(dirId)) {
+    expandedDirs.value.delete(dirId);
+  } else {
+    expandedDirs.value.add(dirId);
+  }
+  // 触发响应式更新
+  expandedDirs.value = new Set(expandedDirs.value);
+}
+
+function isDirExpanded(dirId: string): boolean {
+  return expandedDirs.value.has(dirId);
+}
+
+function shouldShowNode(node: TreeNode<Script> & { depth: number }): boolean {
+  // 根节点不显示
+  if (node.id === 'root') return false;
+  
+  // 如果有搜索，直接显示所有匹配的节点
+  if (searchQuery.value) {
+    return true;
+  }
+  
+  // 检查父目录是否展开
+  const pathParts = node.path.split('/').filter(Boolean);
+  for (let i = 0; i < pathParts.length - 1; i++) {
+    const parentPath = pathParts.slice(0, i + 1).join('/');
+    if (!expandedDirs.value.has(parentPath)) {
+      return false;
+    }
+  }
+  return true;
+}
 </script>
 
 <template>
@@ -950,38 +1016,57 @@ async function handlePullFromGitHub(): Promise<void> {
               </div>
               
               <div class="script-list">
-                <div
-                  v-for="script in filteredScripts"
-                  :key="script.id"
-                  :class="['script-item', { active: selectedScriptId === script.id, orphan: script.orphan }]"
-                  @click="handleSelectScript(script.id)"
-                >
+          <template v-for="node in filteredTree" :key="node.id">
+            <div
+              v-if="shouldShowNode(node)"
+              :class="['tree-node', {
+                'tree-node-dir': node.type === 'dir',
+                'tree-node-file': node.type === 'file',
+                'active': node.type === 'file' && node.file && selectedScriptId === node.file.id,
+                'orphan': node.type === 'file' && node.file && node.file.orphan
+              }]"
+              :style="{ paddingLeft: `${(node.depth - 1) * 16}px` }"
+              @click="node.type === 'file' && node.file ? handleSelectScript(node.file.id) : null"
+            >
+              <template v-if="node.type === 'dir'">
+                <span class="dir-toggle" @click.stop="toggleDir(node.id)">
+                  {{ isDirExpanded(node.id) || searchQuery.value ? '▼' : '▶' }}
+                </span>
+                <span class="dir-icon">📁</span>
+                <span class="dir-name">{{ node.name }}</span>
+              </template>
+              <template v-else-if="node.file">
+                <span class="file-icon">📜</span>
+                <div class="script-item-content">
                   <div class="script-item-header">
                     <input
                       type="checkbox"
-                      :checked="script.enabled"
+                      :checked="node.file.enabled"
                       @click.stop
-                      @change="handleToggleScript(script.id)"
+                      @change="handleToggleScript(node.file.id)"
                       class="script-toggle"
                     />
-                    <span class="script-name">{{ script.name }}</span>
-                    <span v-if="script.orphan" class="orphan-badge">Orphan</span>
+                    <span class="script-name">{{ node.file.name }}</span>
+                    <span v-if="node.file.orphan" class="orphan-badge">Orphan</span>
                   </div>
                   <div class="script-item-meta">
                     <span
                       :class="['source-tag', {
-                        'source-tag-local': script.source === ScriptSource.LOCAL,
-                        'source-tag-remote': script.source === ScriptSource.REMOTE,
-                        'source-tag-modified': script.source === ScriptSource.MODIFIED,
+                        'source-tag-local': node.file.source === ScriptSource.LOCAL,
+                        'source-tag-remote': node.file.source === ScriptSource.REMOTE,
+                        'source-tag-modified': node.file.source === ScriptSource.MODIFIED,
                       }]"
                     >
-                      {{ script.source === ScriptSource.LOCAL ? t('labelLocal') :
-                         script.source === ScriptSource.MODIFIED ? t('labelModified') : t('labelRemote') }}
+                      {{ node.file.source === ScriptSource.LOCAL ? t('labelLocal') :
+                         node.file.source === ScriptSource.MODIFIED ? t('labelModified') : t('labelRemote') }}
                     </span>
-                    <span class="script-filename">{{ script.fileName }}</span>
+                    <span class="script-filename">{{ node.file.fileName }}</span>
                   </div>
                 </div>
-              </div>
+              </template>
+            </div>
+          </template>
+        </div>
             </div>
             
             <!-- Editor panel -->
@@ -1856,6 +1941,97 @@ async function handlePullFromGitHub(): Promise<void> {
 
 .result-item.conflict .result-count {
   color: #f59e0b;
+}
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.tree-node:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tree-node.active {
+  background: rgba(46, 204, 113, 0.1);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.tree-node.orphan {
+  border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.tree-node-dir {
+  cursor: pointer;
+}
+
+.tree-node-file {
+  cursor: pointer;
+}
+
+.dir-toggle {
+  width: 16px;
+  text-align: center;
+  font-size: 10px;
+  color: #888;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.dir-icon,
+.file-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.dir-name {
+  font-weight: 500;
+  color: #e0e0e0;
+}
+
+.script-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.script-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.script-toggle {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.script-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e0e0e0;
+}
+
+.script-filename {
+  font-size: 12px;
+  color: #666;
+}
+
+.orphan-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+  flex-shrink: 0;
 }
 </style>
 
