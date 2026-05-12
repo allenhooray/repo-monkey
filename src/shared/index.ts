@@ -7,3 +7,10 @@ export type { TreeNode } from './utils/tree-utils';
 export * from './i18n';
 export * from './types';
 export * from './constants';
+
+export { default as Button } from './components/Button.vue';
+export { default as Input } from './components/Input.vue';
+export { default as Select } from './components/Select.vue';
+export { default as Dialog } from './components/Dialog.vue';
+export { default as Status } from './components/Status.vue';
+export { default as ScriptTree } from './components/ScriptTree.vue';
