@@ -202,5 +202,85 @@
   "scriptConflict": {
     "message": "同步冲突",
     "description": "脚本冲突状态"
+  },
+  "newScript": {
+    "message": "新建脚本",
+    "description": "新建脚本按钮"
+  },
+  "save": {
+    "message": "保存",
+    "description": "保存按钮"
+  },
+  "delete": {
+    "message": "删除",
+    "description": "删除按钮"
+  },
+  "fullscreen": {
+    "message": "全屏",
+    "description": "全屏按钮"
+  },
+  "exitFullscreen": {
+    "message": "退出全屏",
+    "description": "退出全屏按钮"
+  },
+  "fileName": {
+    "message": "文件名",
+    "description": "文件名输入框标签"
+  },
+  "confirmDeleteLocalScript": {
+    "message": "确定要删除此脚本吗？此操作不可恢复。",
+    "description": "删除本地脚本确认提示"
+  },
+  "confirmDeleteRemoteScript": {
+    "message": "确定要从本地移除此脚本吗？此操作不会影响 GitHub 仓库中的文件。",
+    "description": "删除远端脚本确认提示"
+  },
+  "fileNameRequired": {
+    "message": "请输入文件名",
+    "description": "文件名必填错误"
+  },
+  "fileNameInvalid": {
+    "message": "文件名无效。只能包含字母、数字、下划线、连字符和点，且必须以 .js 结尾",
+    "description": "文件名格式错误"
+  },
+  "fileNameDuplicate": {
+    "message": "文件名已存在",
+    "description": "文件名重复错误"
+  },
+  "saveSuccess": {
+    "message": "保存成功",
+    "description": "保存成功提示"
+  },
+  "deleteSuccess": {
+    "message": "删除成功",
+    "description": "删除成功提示"
+  },
+  "selectScriptToEdit": {
+    "message": "请从左侧选择一个脚本进行编辑",
+    "description": "提示用户选择脚本"
+  },
+  "labelRemote": {
+    "message": "远端",
+    "description": "远端标签"
+  },
+  "labelLocal": {
+    "message": "本地",
+    "description": "本地标签"
+  },
+  "labelModified": {
+    "message": "已修改",
+    "description": "已修改标签"
+  },
+  "enabled": {
+    "message": "已启用",
+    "description": "启用状态"
+  },
+  "disabled": {
+    "message": "已禁用",
+    "description": "禁用状态"
+  },
+  "searchScripts": {
+    "message": "搜索脚本...",
+    "description": "搜索框占位符"
   }
 }

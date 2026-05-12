@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { EditorView, basicSetup } from 'codemirror';
+import { EditorState } from '@codemirror/state';
+import { javascript } from '@codemirror/lang-javascript';
+import { lineNumbers } from '@codemirror/view';
+import { keymap } from '@codemirror/view';
+import { defaultKeymap, indentWithTab } from '@codemirror/commands';
 import type { Locale, Settings } from '../shared/types';
 import { availableLocales, currentLocale, setLocale, t as translate } from '../shared/i18n';
 import { parseRepoInput } from '../shared/utils/repo-parser';
+import { ScriptSource } from '../shared/constants';
+import type { Script } from '../runtime';
 
 type StatusType = 'success' | 'error' | 'loading' | '';
 type TabKey = 'general' | 'repository' | 'scripts';
@@ -11,12 +19,16 @@ const settings = ref<Settings | null>(null);
 const loading = ref(true);
 const editing = ref(false);
 const activeTab = ref<TabKey>('general');
-
 const accessToken = ref('');
 const repoInput = ref('');
-
 const statusType = ref<StatusType>('');
 const statusMessage = ref('');
+const scripts = ref<Script[]>([]);
+const selectedScriptId = ref<string | null>(null);
+const searchQuery = ref('');
+const isFullscreen = ref(false);
+const editorContainer = ref<HTMLElement | null>(null);
+let editorView: EditorView | null = null;
 
 const isBound = computed(
   () =>
@@ -38,8 +50,48 @@ const lastSyncText = computed(() => {
     : t('never');
 });
 
+const filteredScripts = computed(() => {
+  return scripts.value.filter(script =>
+    script.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    script.fileName.toLowerCase().includes(searchQuery.value.toLowerCase())
+  );
+});
+
+const selectedScript = computed(() => {
+  return scripts.value.find(s => s.id === selectedScriptId.value) || null;
+});
+
+const isLocalScript = computed(() => {
+  return selectedScript.value?.source === ScriptSource.LOCAL;
+});
+
+const isRemoteScript = computed(() => {
+  return selectedScript.value?.source === ScriptSource.REMOTE;
+});
+
+const isModifiedScript = computed(() => {
+  return selectedScript.value?.source === ScriptSource.MODIFIED;
+});
+
+const editorContent = computed({
+  get: () => selectedScript.value?.content || '',
+  set: (val) => {
+    if (selectedScript.value) {
+      selectedScript.value.content = val;
+    }
+  }
+});
+
+const editorFileName = computed({
+  get: () => selectedScript.value?.fileName || '',
+  set: (val) => {
+    if (selectedScript.value) {
+      selectedScript.value.fileName = val;
+    }
+  }
+});
+
 function t(key: string): string {
-  // Touch the ref so this computed/template re-evaluates on locale change.
   void currentLocale.value;
   return translate(key);
 }
@@ -78,7 +130,13 @@ async function loadSettings(): Promise<void> {
     setLocale(settings.value.language);
   }
   syncFormFields();
+  await loadScripts();
   loading.value = false;
+}
+
+async function loadScripts(): Promise<void> {
+  const response = await chrome.runtime.sendMessage({ action: 'getScripts' });
+  scripts.value = response.scripts as Script[];
 }
 
 async function persistSettings(patch: Partial<Settings>): Promise<void> {
@@ -137,6 +195,7 @@ async function handleSave(): Promise<void> {
     });
 
     await chrome.runtime.sendMessage({ action: 'syncScripts' });
+    await loadScripts();
 
     setStatus('success', t('successBound'));
     editing.value = false;
@@ -155,6 +214,7 @@ async function handleSync(): Promise<void> {
 
   try {
     await chrome.runtime.sendMessage({ action: 'syncScripts' });
+    await loadScripts();
     await chrome.runtime.sendMessage({
       action: 'saveSettings',
       settings: { ...settings.value, lastSync: new Date().toISOString() },
@@ -188,11 +248,258 @@ async function handleUnbind(): Promise<void> {
   await loadSettings();
 }
 
+async function handleToggleScript(scriptId: string): Promise<void> {
+  const response = await chrome.runtime.sendMessage({ 
+    action: 'toggleScript', 
+    scriptId 
+  });
+  scripts.value = response.scripts as Script[];
+}
+
+const DEFAULT_SCRIPT_TEMPLATE = `// ==UserScript==
+// @name New Script
+// @description My new user script
+// @version 1.0
+// @author Me
+// @match *://*/*
+// ==/UserScript==
+
+console.log('Hello, world!');
+`;
+
+function handleNewScript(): void {
+  const tempScript: Partial<Script> = {
+    name: 'New Script',
+    fileName: `new-script-${Date.now()}.js`,
+    content: DEFAULT_SCRIPT_TEMPLATE,
+    enabled: true,
+  };
+  
+  selectedScriptId.value = 'new';
+  editorFileName.value = tempScript.fileName as string;
+  editorContent.value = tempScript.content as string;
+  
+  nextTick(() => {
+    initEditor();
+  });
+}
+
+function validateFileName(fileName: string): { valid: boolean; message?: string } {
+  if (!fileName.trim()) {
+    return { valid: false, message: t('fileNameRequired') };
+  }
+  
+  if (!fileName.endsWith('.js')) {
+    return { valid: false, message: t('fileNameInvalid') };
+  }
+  
+  const validNameRegex = /^[a-zA-Z0-9-_./]+$/;
+  if (!validNameRegex.test(fileName)) {
+    return { valid: false, message: t('fileNameInvalid') };
+  }
+  
+  const duplicate = scripts.value.some(s => 
+    s.id !== selectedScriptId.value && 
+    (s.fileName === fileName || s.remotePath === fileName)
+  );
+  
+  if (duplicate) {
+    return { valid: false, message: t('fileNameDuplicate') };
+  }
+  
+  return { valid: true };
+}
+
+async function handleSaveScript(): Promise<void> {
+  if (!selectedScript.value && selectedScriptId.value !== 'new') return;
+  
+  const fileNameValidation = validateFileName(editorFileName.value);
+  if (!fileNameValidation.valid) {
+    setStatus('error', fileNameValidation.message as string);
+    return;
+  }
+  
+  try {
+    let response;
+    
+    if (selectedScriptId.value === 'new') {
+      const newScriptData = {
+        fileName: editorFileName.value,
+        content: editorContent.value,
+        name: '',
+        metadata: {},
+      };
+      
+      response = await chrome.runtime.sendMessage({
+        action: 'createScript',
+        script: newScriptData,
+      });
+    } else {
+      const updatedScript = {
+        ...selectedScript.value,
+        fileName: editorFileName.value,
+        content: editorContent.value,
+      };
+      
+      response = await chrome.runtime.sendMessage({
+        action: 'updateScript',
+        script: updatedScript,
+      });
+    }
+    
+    if (response.success) {
+      scripts.value = response.scripts as Script[];
+      if (selectedScriptId.value === 'new') {
+        const newScript = scripts.value[scripts.value.length - 1];
+        selectedScriptId.value = newScript.id;
+      }
+      setStatus('success', t('saveSuccess'));
+      setTimeout(clearStatus, 2000);
+    }
+  } catch (error) {
+    setStatus('error', `${t('error')} ${(error as Error).message}`);
+  }
+}
+
+async function handleDeleteScript(): Promise<void> {
+  if (!selectedScriptId.value || selectedScriptId.value === 'new') return;
+  
+  const confirmMessage = isLocalScript.value 
+    ? t('confirmDeleteLocalScript') 
+    : t('confirmDeleteRemoteScript');
+  
+  if (!confirm(confirmMessage)) return;
+  
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'deleteScript',
+      scriptId: selectedScriptId.value,
+    });
+    
+    if (response.success) {
+      scripts.value = response.scripts as Script[];
+      selectedScriptId.value = null;
+      destroyEditor();
+      setStatus('success', t('deleteSuccess'));
+      setTimeout(clearStatus, 2000);
+    }
+  } catch (error) {
+    setStatus('error', `${t('error')} ${(error as Error).message}`);
+  }
+}
+
+function handleSelectScript(scriptId: string): void {
+  selectedScriptId.value = scriptId;
+  nextTick(() => {
+    initEditor();
+  });
+}
+
+function handleFullscreen(): void {
+  if (!editorContainer.value) return;
+  
+  if (!isFullscreen.value) {
+    if (editorContainer.value.requestFullscreen) {
+      editorContainer.value.requestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+}
+
+function initEditor(): void {
+  destroyEditor();
+  
+  if (!editorContainer.value) return;
+  
+  const state = EditorState.create({
+    doc: editorContent.value,
+    extensions: [
+      basicSetup,
+      javascript(),
+      lineNumbers(),
+      keymap.of([
+        ...defaultKeymap,
+        indentWithTab,
+        {
+          key: 'Mod-s',
+          run: () => {
+            handleSaveScript();
+            return true;
+          },
+          preventDefault: true,
+        },
+      ]),
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged && selectedScript.value) {
+          editorContent.value = update.state.doc.toString();
+        }
+      }),
+      EditorView.theme({
+        '&': {
+          backgroundColor: '#1e1e1e',
+          color: '#e0e0e0',
+          height: '100%',
+        },
+        '.cm-scroller': {
+          fontFamily: 'Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
+        },
+        '.cm-gutters': {
+          backgroundColor: '#2d2d2d',
+          color: '#666',
+          borderRight: '1px solid #404040',
+        },
+        '.cm-activeLineGutter': {
+          backgroundColor: '#333',
+        },
+        '.cm-activeLine': {
+          backgroundColor: 'rgba(46, 204, 113, 0.05)',
+        },
+        '.cm-selectionMatch': {
+          backgroundColor: 'rgba(46, 204, 113, 0.2)',
+        },
+        '.cm-cursor': {
+          borderLeftColor: '#2ecc71',
+        },
+        '&.cm-focused .cm-cursor': {
+          borderLeftColor: '#2ecc71',
+        },
+        '.cm-line': {
+          padding: '0 4px',
+        },
+      }),
+    ],
+  });
+  
+  editorView = new EditorView({
+    state,
+    parent: editorContainer.value,
+  });
+}
+
+function destroyEditor(): void {
+  if (editorView) {
+    editorView.destroy();
+    editorView = null;
+  }
+}
+
 watch(activeTab, () => {
   clearStatus();
+  if (activeTab.value === 'scripts') {
+    loadScripts();
+  }
 });
 
-onMounted(loadSettings);
+onMounted(() => {
+  loadSettings();
+  
+  document.addEventListener('fullscreenchange', () => {
+    isFullscreen.value = !!document.fullscreenElement;
+  });
+});
 </script>
 
 <template>
@@ -333,10 +640,99 @@ onMounted(loadSettings);
         </section>
 
         <!-- Script management -->
-        <section v-else-if="activeTab === 'scripts'" class="page">
+        <section v-else-if="activeTab === 'scripts'" class="page scripts-page">
           <h2 class="page-title">{{ t('scriptManagement') }}</h2>
-          <div class="card empty-card">
-            <p class="empty-text">{{ t('comingSoon') }}</p>
+          
+          <div class="scripts-layout">
+            <!-- Script list -->
+            <div class="script-list-panel">
+              <div class="script-list-header">
+                <div class="search-box">
+                  <input
+                    type="text"
+                    :placeholder="t('searchScripts')"
+                    v-model="searchQuery"
+                    class="search-input"
+                  />
+                </div>
+                <button class="btn btn-primary btn-new-script" @click="handleNewScript">
+                  {{ t('newScript') }}
+                </button>
+              </div>
+              
+              <div class="script-list">
+                <div
+                  v-for="script in filteredScripts"
+                  :key="script.id"
+                  :class="['script-item', { active: selectedScriptId === script.id }]"
+                  @click="handleSelectScript(script.id)"
+                >
+                  <div class="script-item-header">
+                    <input
+                      type="checkbox"
+                      :checked="script.enabled"
+                      @click.stop
+                      @change="handleToggleScript(script.id)"
+                      class="script-toggle"
+                    />
+                    <span class="script-name">{{ script.name }}</span>
+                  </div>
+                  <div class="script-item-meta">
+                    <span
+                      :class="['source-tag', {
+                        'source-tag-local': script.source === ScriptSource.LOCAL,
+                        'source-tag-remote': script.source === ScriptSource.REMOTE,
+                        'source-tag-modified': script.source === ScriptSource.MODIFIED,
+                      }]"
+                    >
+                      {{ script.source === ScriptSource.LOCAL ? t('labelLocal') :
+                         script.source === ScriptSource.MODIFIED ? t('labelModified') : t('labelRemote') }}
+                    </span>
+                    <span class="script-filename">{{ script.fileName }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Editor panel -->
+            <div class="editor-panel">
+              <div v-if="!selectedScriptId" class="editor-empty">
+                <p>{{ t('selectScriptToEdit') }}</p>
+              </div>
+              
+              <div v-else class="editor-container" :class="{ fullscreen: isFullscreen }">
+                <div class="editor-toolbar">
+                  <div class="toolbar-left">
+                    <div class="form-group">
+                      <label>{{ t('fileName') }}</label>
+                      <input
+                        type="text"
+                        v-model="editorFileName"
+                        class="file-name-input"
+                        :disabled="selectedScript?.source === ScriptSource.REMOTE && !selectedScript?.dirty"
+                      />
+                    </div>
+                  </div>
+                  <div class="toolbar-right">
+                    <button class="btn btn-secondary" @click="handleFullscreen">
+                      {{ isFullscreen ? t('exitFullscreen') : t('fullscreen') }}
+                    </button>
+                    <button v-if="selectedScriptId !== 'new'" class="btn btn-danger" @click="handleDeleteScript">
+                      {{ t('delete') }}
+                    </button>
+                    <button class="btn btn-primary" @click="handleSaveScript">
+                      {{ t('save') }}
+                    </button>
+                  </div>
+                </div>
+                
+                <div ref="editorContainer" class="code-editor"></div>
+                
+                <div v-if="statusMessage" :class="['status-line', statusType]">
+                  {{ statusMessage }}
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </template>
@@ -346,7 +742,7 @@ onMounted(loadSettings);
 
 <style scoped>
 .hint {
-  color: #888;
+  color: #666;
   font-size: 12px;
   margin-top: 8px;
   display: block;
@@ -358,7 +754,7 @@ onMounted(loadSettings);
 
 .repo-meta {
   font-size: 12px;
-  color: #888;
+  color: #666;
   margin-top: 4px;
 }
 
@@ -383,7 +779,7 @@ onMounted(loadSettings);
 
 .status-line.loading {
   text-align: center;
-  color: #888;
+  color: #666;
 }
 
 .layout {
@@ -418,7 +814,7 @@ onMounted(loadSettings);
   display: block;
   margin-top: 4px;
   font-size: 12px;
-  color: #888;
+  color: #666;
 }
 
 .nav {
@@ -433,7 +829,7 @@ onMounted(loadSettings);
   background: transparent;
   border: none;
   border-radius: 8px;
-  color: #cfcfcf;
+  color: #b0b0b0;
   font-size: 14px;
   cursor: pointer;
   transition: background-color 0.15s, color 0.15s;
@@ -453,7 +849,19 @@ onMounted(loadSettings);
 .content {
   flex: 1;
   padding: 40px 48px;
-  max-width: 760px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.page {
+  max-width: 800px;
+  height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+}
+
+.page.scripts-page {
+  max-width: 100%;
 }
 
 .page-title {
@@ -461,6 +869,7 @@ onMounted(loadSettings);
   font-weight: 700;
   margin-bottom: 20px;
   color: #f0f0f0;
+  flex-shrink: 0;
 }
 
 .card-title {
@@ -492,7 +901,351 @@ onMounted(loadSettings);
 }
 
 .empty-text {
-  color: #888;
+  color: #666;
   font-size: 14px;
+}
+
+.card {
+  background: #1e1e1e;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #333;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  color: #aaa;
+  margin-bottom: 8px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #2d2d2d;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #2ecc71;
+}
+
+.form-group input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #2ecc71;
+  color: #000;
+}
+
+.btn-primary:hover {
+  background: #27ae60;
+}
+
+.btn-danger {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #c0392b;
+}
+
+.btn-secondary {
+  background: #404040;
+  color: #e0e0e0;
+}
+
+.btn-secondary:hover {
+  background: #505050;
+}
+
+.btn-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.repo-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #2d2d2d;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.repo-name {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.repo-link {
+  color: #2ecc71;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.repo-link:hover {
+  text-decoration: underline;
+}
+
+.loading {
+  text-align: center;
+  padding: 48px;
+  color: #666;
+}
+
+.scripts-layout {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.script-list-panel {
+  width: 320px;
+  flex-shrink: 0;
+  background: #1e1e1e;
+  border-radius: 12px;
+  border: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.script-list-header {
+  padding: 16px;
+  border-bottom: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.search-box {
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: #2d2d2d;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #2ecc71;
+}
+
+.btn-new-script {
+  width: 100%;
+  padding: 10px 16px;
+}
+
+.script-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  min-height: 0;
+}
+
+.script-item {
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  border: 1px solid transparent;
+}
+
+.script-item:hover {
+  background: #242424;
+}
+
+.script-item.active {
+  background: rgba(46, 204, 113, 0.1);
+  border-color: rgba(46, 204, 113, 0.3);
+}
+
+.script-item-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.script-toggle {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.script-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e0e0e0;
+}
+
+.script-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.source-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.source-tag-local {
+  background: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+.source-tag-remote {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.source-tag-modified {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.script-filename {
+  font-size: 12px;
+  color: #666;
+}
+
+.editor-panel {
+  flex: 1;
+  background: #1e1e1e;
+  border-radius: 12px;
+  border: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.editor-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 14px;
+}
+
+.editor-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  padding: 16px;
+}
+
+.editor-container.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: #1e1e1e;
+  border-radius: 0;
+  padding: 24px;
+}
+
+.editor-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.toolbar-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.toolbar-right {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.file-name-input {
+  width: 100%;
+  max-width: 400px;
+}
+
+.code-editor {
+  flex: 1;
+  min-height: 300px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 0;
+}
+</style>
+
+<style>
+.code-editor .cm-scroller::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.code-editor .cm-scroller::-webkit-scrollbar-track {
+  background: #2d2d2d;
+  border-radius: 5px;
+}
+
+.code-editor .cm-scroller::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 5px;
+}
+
+.code-editor .cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+.code-editor .cm-scroller::-webkit-scrollbar-thumb:active {
+  background: #777;
 }
 </style>

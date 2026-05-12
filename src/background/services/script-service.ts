@@ -94,6 +94,68 @@ export async function toggleScript(scriptId: string): Promise<Script[]> {
   return updatedScripts;
 }
 
+export async function createScript(script: Omit<Script, 'id' | 'createdAt' | 'updatedAt'>): Promise<Script[]> {
+  const scripts = await getScripts();
+  const metadataParser = new MetadataParser();
+  const metadata = metadataParser.parse(script.content);
+  
+  const newScript: Script = {
+    ...script,
+    id: generateUUID(),
+    name: metadata.name || script.fileName.replace('.js', ''),
+    metadata,
+    source: ScriptSource.LOCAL,
+    enabled: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    dirty: false,
+  };
+  
+  const updatedScripts = [...scripts, newScript];
+  await chrome.storage.local.set({ [STORAGE_KEY_SCRIPTS]: updatedScripts });
+  return updatedScripts;
+}
+
+export async function updateScript(script: Script): Promise<Script[]> {
+  const scripts = await getScripts();
+  const metadataParser = new MetadataParser();
+  const metadata = metadataParser.parse(script.content);
+  
+  const existingScript = scripts.find(s => s.id === script.id);
+  let updatedSource = script.source;
+  let updatedDirty = script.dirty;
+  
+  if (existingScript && existingScript.source === ScriptSource.REMOTE) {
+    updatedSource = ScriptSource.MODIFIED;
+    updatedDirty = true;
+  }
+  
+  const updatedScripts = scripts.map(s => {
+    if (s.id === script.id) {
+      return {
+        ...s,
+        ...script,
+        name: metadata.name || script.fileName.replace('.js', ''),
+        metadata,
+        source: updatedSource,
+        dirty: updatedDirty,
+        updatedAt: new Date().toISOString(),
+      };
+    }
+    return s;
+  });
+  
+  await chrome.storage.local.set({ [STORAGE_KEY_SCRIPTS]: updatedScripts });
+  return updatedScripts;
+}
+
+export async function deleteScript(scriptId: string): Promise<Script[]> {
+  const scripts = await getScripts();
+  const updatedScripts = scripts.filter(s => s.id !== scriptId);
+  await chrome.storage.local.set({ [STORAGE_KEY_SCRIPTS]: updatedScripts });
+  return updatedScripts;
+}
+
 export async function parseScriptFromFile(content: string, file: any): Promise<Script> {
   const metadataParser = new MetadataParser();
   const metadata = metadataParser.parse(content);

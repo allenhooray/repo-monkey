@@ -1,5 +1,5 @@
 import { syncScripts } from '../services/sync-service';
-import { getScripts, toggleScript } from '../services/script-service';
+import { getScripts, toggleScript, createScript, updateScript, deleteScript } from '../services/script-service';
 import { getSettings, saveSettings, unbindRepo } from '../services/storage-service';
 import { syncRegistrations, clearRegistrations } from '../services/execution-service';
 import { handleGMBridgeRequest } from '../services/gm-bridge-service';
@@ -30,6 +30,45 @@ export function setupMessageHandler(): void {
               .then(async (scripts) => {
                 await syncRegistrations();
                 sendResponse({ scripts });
+              })
+              .catch((error: Error) =>
+                sendResponse({ success: false, error: error.message }),
+              );
+          }
+          handled = true;
+          break;
+        case 'createScript':
+          if (request.script) {
+            createScript(request.script)
+              .then(async (scripts) => {
+                await syncRegistrations();
+                sendResponse({ scripts, success: true });
+              })
+              .catch((error: Error) =>
+                sendResponse({ success: false, error: error.message }),
+              );
+          }
+          handled = true;
+          break;
+        case 'updateScript':
+          if (request.script) {
+            updateScript(request.script)
+              .then(async (scripts) => {
+                await syncRegistrations();
+                sendResponse({ scripts, success: true });
+              })
+              .catch((error: Error) =>
+                sendResponse({ success: false, error: error.message }),
+              );
+          }
+          handled = true;
+          break;
+        case 'deleteScript':
+          if (request.scriptId) {
+            deleteScript(request.scriptId)
+              .then(async (scripts) => {
+                await syncRegistrations();
+                sendResponse({ scripts, success: true });
               })
               .catch((error: Error) =>
                 sendResponse({ success: false, error: error.message }),

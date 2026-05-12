@@ -202,5 +202,85 @@
   "scriptConflict": {
     "message": "Sync conflict",
     "description": "Script conflict status"
+  },
+  "newScript": {
+    "message": "New Script",
+    "description": "New script button"
+  },
+  "save": {
+    "message": "Save",
+    "description": "Save button"
+  },
+  "delete": {
+    "message": "Delete",
+    "description": "Delete button"
+  },
+  "fullscreen": {
+    "message": "Fullscreen",
+    "description": "Fullscreen button"
+  },
+  "exitFullscreen": {
+    "message": "Exit Fullscreen",
+    "description": "Exit fullscreen button"
+  },
+  "fileName": {
+    "message": "File Name",
+    "description": "File name input label"
+  },
+  "confirmDeleteLocalScript": {
+    "message": "Are you sure you want to delete this script? This action cannot be undone.",
+    "description": "Delete local script confirmation"
+  },
+  "confirmDeleteRemoteScript": {
+    "message": "Are you sure you want to remove this script from local? This will not affect the file in your GitHub repository.",
+    "description": "Delete remote script confirmation"
+  },
+  "fileNameRequired": {
+    "message": "Please enter a file name",
+    "description": "File name required error"
+  },
+  "fileNameInvalid": {
+    "message": "Invalid file name. It can only contain letters, numbers, underscores, hyphens, and dots, and must end with .js",
+    "description": "File name format error"
+  },
+  "fileNameDuplicate": {
+    "message": "File name already exists",
+    "description": "File name duplicate error"
+  },
+  "saveSuccess": {
+    "message": "Saved successfully",
+    "description": "Save success message"
+  },
+  "deleteSuccess": {
+    "message": "Deleted successfully",
+    "description": "Delete success message"
+  },
+  "selectScriptToEdit": {
+    "message": "Select a script from the left to edit",
+    "description": "Prompt to select script"
+  },
+  "labelRemote": {
+    "message": "Remote",
+    "description": "Remote label"
+  },
+  "labelLocal": {
+    "message": "Local",
+    "description": "Local label"
+  },
+  "labelModified": {
+    "message": "Modified",
+    "description": "Modified label"
+  },
+  "enabled": {
+    "message": "Enabled",
+    "description": "Enabled status"
+  },
+  "disabled": {
+    "message": "Disabled",
+    "description": "Disabled status"
+  },
+  "searchScripts": {
+    "message": "Search scripts...",
+    "description": "Search box placeholder"
   }
 }
