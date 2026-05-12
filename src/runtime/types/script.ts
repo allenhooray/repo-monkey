@@ -1,4 +1,5 @@
 import type { ScriptMetadata } from './metadata';
+import { ScriptSource } from '../../shared/constants';
 
 export interface Script {
   id: string;
@@ -10,4 +11,11 @@ export interface Script {
   enabled: boolean;
   createdAt: string;
   updatedAt?: string;
+  source: ScriptSource;
+  remoteSha?: string;
+  remotePath?: string;
+  dirty: boolean;
+  lastPushedAt?: string;
+  orphan?: boolean;
+  conflict?: boolean;
 }

@@ -1,6 +1,7 @@
 import { setupAlarmHandler } from './handlers/alarm-handler';
 import { setupMessageHandler } from './handlers/message-handler';
 import { syncRegistrations } from './services/execution-service';
+import { migrateScriptsIfNeeded } from './services/script-service';
 import { SYNC_ALARM_NAME, SYNC_INTERVAL_MINUTES } from '../shared/constants';
 
 chrome.runtime.onInstalled.addListener(async () => {
@@ -9,6 +10,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   });
   console.log('RepoMonkey installed');
   try {
+    await migrateScriptsIfNeeded();
     await syncRegistrations();
   } catch (error) {
     console.warn('[RepoMonkey] initial registration on install failed:', error);
@@ -17,6 +19,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 
 chrome.runtime.onStartup.addListener(async () => {
   try {
+    await migrateScriptsIfNeeded();
     await syncRegistrations();
   } catch (error) {
     console.warn('[RepoMonkey] initial registration on startup failed:', error);
@@ -28,6 +31,7 @@ setupMessageHandler();
 
 (async () => {
   try {
+    await migrateScriptsIfNeeded();
     await syncRegistrations();
   } catch (error) {
     console.warn('[RepoMonkey] background bootstrap registration failed:', error);

@@ -178,5 +178,29 @@
   "openExtensionDetails": {
     "message": "打开扩展详情页",
     "description": "打开扩展详情页链接文字"
+  },
+  "scriptSourceRemote": {
+    "message": "从 GitHub 同步",
+    "description": "脚本来源 - 远端"
+  },
+  "scriptSourceLocal": {
+    "message": "仅本地",
+    "description": "脚本来源 - 本地"
+  },
+  "scriptSourceModified": {
+    "message": "本地已修改",
+    "description": "脚本来源 - 已修改"
+  },
+  "scriptDirty": {
+    "message": "未同步的更改",
+    "description": "脚本脏状态"
+  },
+  "scriptOrphan": {
+    "message": "已从 GitHub 删除",
+    "description": "脚本孤立状态"
+  },
+  "scriptConflict": {
+    "message": "同步冲突",
+    "description": "脚本冲突状态"
   }
 }

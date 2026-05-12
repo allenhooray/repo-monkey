@@ -2,6 +2,7 @@ import { getSettings, saveSettings } from './storage-service';
 import { saveScripts, parseScriptFromFile } from './script-service';
 import { fetchFilesFromRepo, fetchFileContent } from './github-service';
 import type { Script } from '../../runtime';
+import { ScriptSource } from '../../shared/constants';
 
 export async function syncScripts(): Promise<void> {
   const settings = await getSettings();
@@ -12,17 +13,21 @@ export async function syncScripts(): Promise<void> {
 
   try {
     const files = await fetchFilesFromRepo(settings);
-    const scripts: Script[] = [];
+    const remoteScripts: Script[] = [];
 
     for (const file of files) {
       if (file.name.endsWith('.js') && file.type === 'file') {
         const content = await fetchFileContent(file.download_url);
         const script = await parseScriptFromFile(content, file);
-        scripts.push(script);
+        remoteScripts.push({
+          ...script,
+          remoteSha: file.sha,
+          remotePath: file.path || file.name,
+        });
       }
     }
 
-    await saveScripts(scripts);
+    await saveScripts(remoteScripts);
     
     settings.lastSync = new Date().toISOString();
     await saveSettings(settings);

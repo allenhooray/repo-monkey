@@ -3,6 +3,15 @@ import type { ScriptMetadata } from '../types/metadata';
 import { MetadataParser } from '../parsers/metadata-parser';
 import { UrlMatcher } from '../parsers/url-matcher';
 import type { RuntimeAdapter } from '../types/adapter';
+import { ScriptSource } from '../../shared/constants';
+
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 export class ScriptManager {
   private scripts: Map<string, Script> = new Map();
@@ -19,7 +28,7 @@ export class ScriptManager {
   addScript(content: string, fileName: string, sha?: string): Script {
     const metadata = this.metadataParser.parse(content);
     const script: Script = {
-      id: sha || this.generateId(fileName),
+      id: generateUUID(),
       name: metadata.name || fileName.replace('.js', ''),
       metadata,
       content,
@@ -28,6 +37,8 @@ export class ScriptManager {
       enabled: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      source: ScriptSource.LOCAL,
+      dirty: true,
     };
     this.scripts.set(script.id, script);
     return script;

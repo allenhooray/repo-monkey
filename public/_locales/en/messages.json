@@ -178,5 +178,29 @@
   "openExtensionDetails": {
     "message": "Open extension details",
     "description": "Link text to open extension details page"
+  },
+  "scriptSourceRemote": {
+    "message": "Synced from GitHub",
+    "description": "Script source - remote"
+  },
+  "scriptSourceLocal": {
+    "message": "Local only",
+    "description": "Script source - local"
+  },
+  "scriptSourceModified": {
+    "message": "Locally modified",
+    "description": "Script source - modified"
+  },
+  "scriptDirty": {
+    "message": "Unsynced changes",
+    "description": "Script dirty status"
+  },
+  "scriptOrphan": {
+    "message": "Deleted from GitHub",
+    "description": "Script orphan status"
+  },
+  "scriptConflict": {
+    "message": "Sync conflict",
+    "description": "Script conflict status"
   }
 }

@@ -14,6 +14,7 @@ export interface GitHubFile {
   type: string;
   sha: string;
   download_url: string;
+  path?: string;
 }
 
 export type MessageAction =
