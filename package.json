@@ -6,9 +6,12 @@
   "scripts": {
     "build": "node build.js",
     "build:zip": "node build.js --zip",
-    "dev": "node build.js && echo \"Use 'npm run build' to build the extension\""
+    "dev": "node build.js && echo \"Use 'npm run build' to build the extension\"",
+    "type-check": "npx tsc --noEmit"
   },
   "devDependencies": {
-    "archiver": "^7.0.1"
+    "@types/chrome": "^0.1.42",
+    "archiver": "^7.0.1",
+    "typescript": "^6.0.3"
   }
 }

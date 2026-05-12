@@ -1,8 +1,10 @@
+import type { RepoInfo, Settings } from './types';
+
 document.addEventListener('DOMContentLoaded', async () => {
   await loadContent();
 });
 
-function parseRepoInput(input) {
+function parseRepoInput(input: string): RepoInfo | null {
   if (!input) return null;
 
   const trimmed = input.trim();
@@ -34,9 +36,12 @@ function parseRepoInput(input) {
   return null;
 }
 
-async function loadContent() {
+async function loadContent(): Promise<void> {
   const content = document.getElementById('content');
-  const settings = await chrome.runtime.sendMessage({ action: 'getSettings' });
+  if (!content) return;
+
+  const settingsResponse = await chrome.runtime.sendMessage({ action: 'getSettings' });
+  const settings = settingsResponse.settings as Settings;
 
   if (settings.accessToken && settings.repoOwner && settings.repoName) {
     renderBoundRepo(content, settings);
@@ -45,7 +50,7 @@ async function loadContent() {
   }
 }
 
-function renderBindForm(container, settings) {
+function renderBindForm(container: HTMLElement, settings: Settings): void {
   const repoInput = settings.repoInput || 
     (settings.repoOwner && settings.repoName ? `${settings.repoOwner}/${settings.repoName}` : '');
 
@@ -74,47 +79,55 @@ function renderBindForm(container, settings) {
     </div>
   `;
 
-  document.getElementById('saveBtn').addEventListener('click', async () => {
-    const status = document.getElementById('status');
-    const accessToken = document.getElementById('accessToken').value.trim();
-    const repoInput = document.getElementById('repoInput').value.trim();
+  const saveBtn = document.getElementById('saveBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', async () => {
+      const status = document.getElementById('status');
+      const accessTokenInput = document.getElementById('accessToken') as HTMLInputElement;
+      const repoInputElement = document.getElementById('repoInput') as HTMLInputElement;
 
-    if (!accessToken || !repoInput) {
-      status.innerHTML = `<div class="status error">${chrome.i18n.getMessage('pleaseFillAll')}</div>`;
-      return;
-    }
+      if (!status || !accessTokenInput || !repoInputElement) return;
 
-    const parsed = parseRepoInput(repoInput);
-    if (!parsed) {
-      status.innerHTML = `<div class="status error">${chrome.i18n.getMessage('invalidRepoFormat')}</div>`;
-      return;
-    }
+      const accessToken = accessTokenInput.value.trim();
+      const repoInputValue = repoInputElement.value.trim();
 
-    status.innerHTML = `<div class="loading">${chrome.i18n.getMessage('savingSyncing')}</div>`;
+      if (!accessToken || !repoInputValue) {
+        status.innerHTML = `<div class="status error">${chrome.i18n.getMessage('pleaseFillAll')}</div>`;
+        return;
+      }
 
-    try {
-      await chrome.runtime.sendMessage({
-        action: 'saveSettings',
-        settings: {
-          accessToken,
-          repoInput,
-          repoOwner: parsed.owner,
-          repoName: parsed.repo,
-          lastSync: new Date().toISOString()
-        }
-      });
+      const parsed = parseRepoInput(repoInputValue);
+      if (!parsed) {
+        status.innerHTML = `<div class="status error">${chrome.i18n.getMessage('invalidRepoFormat')}</div>`;
+        return;
+      }
 
-      await chrome.runtime.sendMessage({ action: 'syncScripts' });
+      status.innerHTML = `<div class="loading">${chrome.i18n.getMessage('savingSyncing')}</div>`;
 
-      status.innerHTML = `<div class="status success">${chrome.i18n.getMessage('successBound')}</div>`;
-      setTimeout(loadContent, 1000);
-    } catch (error) {
-      status.innerHTML = `<div class="status error">${chrome.i18n.getMessage('error')} ${error.message}</div>`;
-    }
-  });
+      try {
+        await chrome.runtime.sendMessage({
+          action: 'saveSettings',
+          settings: {
+            accessToken,
+            repoInput: repoInputValue,
+            repoOwner: parsed.owner,
+            repoName: parsed.repo,
+            lastSync: new Date().toISOString()
+          }
+        });
+
+        await chrome.runtime.sendMessage({ action: 'syncScripts' });
+
+        status.innerHTML = `<div class="status success">${chrome.i18n.getMessage('successBound')}</div>`;
+        setTimeout(loadContent, 1000);
+      } catch (error) {
+        status.innerHTML = `<div class="status error">${chrome.i18n.getMessage('error')} ${(error as Error).message}</div>`;
+      }
+    });
+  }
 }
 
-function renderBoundRepo(container, settings) {
+function renderBoundRepo(container: HTMLElement, settings: Settings): void {
   const repoUrl = `https://github.com/${settings.repoOwner}/${settings.repoName}`;
   const lastSync = settings.lastSync 
     ? new Date(settings.lastSync).toLocaleString() 
@@ -139,38 +152,50 @@ function renderBoundRepo(container, settings) {
     </div>
   `;
 
-  document.getElementById('syncBtn').addEventListener('click', async () => {
-    const status = document.getElementById('status');
-    status.innerHTML = `<div class="loading">${chrome.i18n.getMessage('syncing')}</div>`;
-    
-    try {
-      await chrome.runtime.sendMessage({ action: 'syncScripts' });
-      
-      const updatedSettings = await chrome.runtime.sendMessage({
-        action: 'saveSettings',
-        settings: { ...settings, lastSync: new Date().toISOString() }
-      });
-      
-      status.innerHTML = `<div class="status success">${chrome.i18n.getMessage('syncSuccess')}</div>`;
-      setTimeout(() => loadContent(), 1000);
-    } catch (error) {
-      status.innerHTML = `<div class="status error">${chrome.i18n.getMessage('syncFailed')} ${error.message}</div>`;
-    }
-  });
+  const syncBtn = document.getElementById('syncBtn');
+  const editBtn = document.getElementById('editBtn');
+  const unbindBtn = document.getElementById('unbindBtn');
 
-  document.getElementById('editBtn').addEventListener('click', () => {
-    renderBindForm(container, settings);
-  });
+  if (syncBtn) {
+    syncBtn.addEventListener('click', async () => {
+      const status = document.getElementById('status');
+      if (!status) return;
+      
+      status.innerHTML = `<div class="loading">${chrome.i18n.getMessage('syncing')}</div>`;
+      
+      try {
+        await chrome.runtime.sendMessage({ action: 'syncScripts' });
+        
+        const updatedSettingsResponse = await chrome.runtime.sendMessage({
+          action: 'saveSettings',
+          settings: { ...settings, lastSync: new Date().toISOString() }
+        });
+        
+        status.innerHTML = `<div class="status success">${chrome.i18n.getMessage('syncSuccess')}</div>`;
+        setTimeout(() => loadContent(), 1000);
+      } catch (error) {
+        status.innerHTML = `<div class="status error">${chrome.i18n.getMessage('syncFailed')} ${(error as Error).message}</div>`;
+      }
+    });
+  }
 
-  document.getElementById('unbindBtn').addEventListener('click', async () => {
-    if (confirm(chrome.i18n.getMessage('confirmUnbind'))) {
-      await chrome.runtime.sendMessage({ action: 'unbindRepo' });
-      loadContent();
-    }
-  });
+  if (editBtn) {
+    editBtn.addEventListener('click', () => {
+      renderBindForm(container, settings);
+    });
+  }
+
+  if (unbindBtn) {
+    unbindBtn.addEventListener('click', async () => {
+      if (confirm(chrome.i18n.getMessage('confirmUnbind'))) {
+        await chrome.runtime.sendMessage({ action: 'unbindRepo' });
+        loadContent();
+      }
+    });
+  }
 }
 
-function escapeHtml(text) {
+function escapeHtml(text: string | null | undefined): string {
   const div = document.createElement('div');
   div.textContent = text || '';
   return div.innerHTML;

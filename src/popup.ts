@@ -1,28 +1,36 @@
+import type { Script, Settings } from './types';
+
 document.addEventListener('DOMContentLoaded', async () => {
   const content = document.getElementById('content');
   const settingsBtn = document.getElementById('settingsBtn');
 
-  settingsBtn.addEventListener('click', () => {
-    chrome.runtime.openOptionsPage();
-  });
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', () => {
+      chrome.runtime.openOptionsPage();
+    });
+  }
 
   await loadContent();
 });
 
-async function loadContent() {
+async function loadContent(): Promise<void> {
   const content = document.getElementById('content');
-  const settings = await chrome.runtime.sendMessage({ action: 'getSettings' });
+  if (!content) return;
+
+  const settingsResponse = await chrome.runtime.sendMessage({ action: 'getSettings' });
+  const settings = settingsResponse.settings as Settings;
 
   if (!settings.accessToken || !settings.repoOwner || !settings.repoName) {
     renderNoRepo(content);
     return;
   }
 
-  const scripts = await chrome.runtime.sendMessage({ action: 'getScripts' });
+  const scriptsResponse = await chrome.runtime.sendMessage({ action: 'getScripts' });
+  const scripts = scriptsResponse.scripts as Script[];
   renderScripts(content, scripts, settings);
 }
 
-function renderNoRepo(container) {
+function renderNoRepo(container: HTMLElement): void {
   container.innerHTML = `
     <div class="no-repo">
       <p>${chrome.i18n.getMessage('noRepoBound')}</p>
@@ -30,12 +38,15 @@ function renderNoRepo(container) {
     </div>
   `;
 
-  document.getElementById('openSettingsBtn').addEventListener('click', () => {
-    chrome.runtime.openOptionsPage();
-  });
+  const openSettingsBtn = document.getElementById('openSettingsBtn');
+  if (openSettingsBtn) {
+    openSettingsBtn.addEventListener('click', () => {
+      chrome.runtime.openOptionsPage();
+    });
+  }
 }
 
-function renderScripts(container, scripts, settings) {
+function renderScripts(container: HTMLElement, scripts: Script[], settings: Settings): void {
   const lastSync = settings.lastSync 
     ? new Date(settings.lastSync).toLocaleString() 
     : chrome.i18n.getMessage('never');
@@ -48,13 +59,18 @@ function renderScripts(container, scripts, settings) {
     <div id="scriptList" class="script-list"></div>
   `;
 
-  document.getElementById('syncBtn').addEventListener('click', async () => {
-    container.innerHTML = `<div class="loading">${chrome.i18n.getMessage('syncing')}</div>`;
-    await chrome.runtime.sendMessage({ action: 'syncScripts' });
-    await loadContent();
-  });
+  const syncBtn = document.getElementById('syncBtn');
+  if (syncBtn) {
+    syncBtn.addEventListener('click', async () => {
+      container.innerHTML = `<div class="loading">${chrome.i18n.getMessage('syncing')}</div>`;
+      await chrome.runtime.sendMessage({ action: 'syncScripts' });
+      await loadContent();
+    });
+  }
 
   const scriptList = document.getElementById('scriptList');
+  if (!scriptList) return;
+
   if (scripts.length === 0) {
     scriptList.innerHTML = `<p style="text-align: center; color: #888;">${chrome.i18n.getMessage('noScriptsFound')}</p>`;
     return;
@@ -78,13 +94,15 @@ function renderScripts(container, scripts, settings) {
 
   document.querySelectorAll('.switch input').forEach(checkbox => {
     checkbox.addEventListener('change', async (e) => {
-      const scriptId = e.target.dataset.id;
-      await chrome.runtime.sendMessage({ action: 'toggleScript', scriptId });
+      const scriptId = (e.target as HTMLInputElement).dataset.id;
+      if (scriptId) {
+        await chrome.runtime.sendMessage({ action: 'toggleScript', scriptId });
+      }
     });
   });
 }
 
-function escapeHtml(text) {
+function escapeHtml(text: string): string {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;

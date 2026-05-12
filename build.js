@@ -1,10 +1,22 @@
 import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync, createWriteStream, unlinkSync, readFileSync } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, extname } from 'path';
+import { execSync } from 'child_process';
 import archiver from 'archiver';
 
 const SRC_DIR = 'src';
 const PUBLIC_DIR = 'public';
 const DIST_DIR = 'dist';
+
+function compileTypeScript() {
+  console.log('Compiling TypeScript...');
+  try {
+    execSync('npx tsc', { stdio: 'inherit' });
+    console.log('TypeScript compiled successfully!');
+  } catch (error) {
+    console.error('TypeScript compilation failed:', error);
+    process.exit(1);
+  }
+}
 
 function copyFiles(src, dest) {
   if (!existsSync(src)) return;
@@ -18,9 +30,21 @@ function copyFiles(src, dest) {
     
     const files = readdirSync(src);
     for (const file of files) {
-      copyFiles(join(src, file), join(dest, file));
+      const srcPath = join(src, file);
+      const ext = extname(file);
+      
+      if (ext === '.ts') {
+        continue;
+      }
+      
+      copyFiles(srcPath, join(dest, file));
     }
   } else {
+    const ext = extname(src);
+    if (ext === '.ts') {
+      return;
+    }
+    
     const destDir = dirname(dest);
     if (!existsSync(destDir)) {
       mkdirSync(destDir, { recursive: true });
@@ -34,6 +58,7 @@ if (!existsSync(DIST_DIR)) {
   mkdirSync(DIST_DIR, { recursive: true });
 }
 
+compileTypeScript();
 copyFiles(SRC_DIR, DIST_DIR);
 copyFiles(PUBLIC_DIR, DIST_DIR);
 
