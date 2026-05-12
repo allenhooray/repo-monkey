@@ -1,19 +1,7 @@
 import { MetadataParser } from '../../runtime';
 import { STORAGE_KEY_SCRIPTS, ScriptSource } from '../../shared/constants';
+import { generateUUID, isValidUUID } from '../../shared/utils/uuid';
 import type { Script } from '../../runtime';
-
-function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
-function isValidUUID(str: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(str);
-}
 
 export async function getScripts(): Promise<Script[]> {
   const result = await chrome.storage.local.get(STORAGE_KEY_SCRIPTS);

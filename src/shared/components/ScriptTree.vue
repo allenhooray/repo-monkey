@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Script } from '../../runtime';
-import { buildTree, flattenTree, type TreeNode } from '../../shared';
+import { buildTree, flattenTree, type TreeNode, formatDate as formatDateUtil } from '../../shared';
 import { ScriptSource } from '../../shared/constants';
 
 const props = defineProps<{
@@ -54,7 +54,7 @@ const filteredTree = computed(() => {
 });
 
 function formatDate(script: Script): string {
-  return new Date(script.updatedAt || script.createdAt).toLocaleDateString();
+  return formatDateUtil(script.updatedAt || script.createdAt);
 }
 
 function toggleDir(dirId: string): void {

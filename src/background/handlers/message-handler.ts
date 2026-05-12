@@ -6,6 +6,7 @@ import { handleGMBridgeRequest } from '../services/gm-bridge-service';
 import { pushScriptToRepo, deleteFileFromRepo, fetchRemoteContent, fetchBranches } from '../services/github-service';
 import type { MessageRequest, MessageResponse, BatchPushResult } from '../../shared/types';
 import { ScriptSource, STORAGE_KEY_SCRIPTS } from '../../shared/constants';
+import type { Script } from '../../runtime';
 
 const PUSH_MUTEX_KEY = 'pushMutex';
 
@@ -57,7 +58,7 @@ export function setupMessageHandler(): void {
           break;
         case 'createScript':
           if (request.script) {
-            createScript(request.script)
+            createScript(request.script as Omit<Script, 'id' | 'createdAt' | 'updatedAt'>)
               .then(async (scripts) => {
                 await syncRegistrations();
                 sendResponse({ scripts, success: true });
@@ -70,7 +71,7 @@ export function setupMessageHandler(): void {
           break;
         case 'updateScript':
           if (request.script) {
-            updateScript(request.script)
+            updateScript(request.script as Script)
               .then(async (scripts) => {
                 await syncRegistrations();
                 sendResponse({ scripts, success: true });
@@ -117,7 +118,7 @@ export function setupMessageHandler(): void {
           break;
         case 'gmBridge':
           if (request.request) {
-            handleGMBridgeRequest(request.request).then(sendResponse);
+            handleGMBridgeRequest(request.request as any).then(sendResponse);
           }
           handled = true;
           break;

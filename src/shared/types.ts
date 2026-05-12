@@ -1,3 +1,5 @@
+import type { Script } from '../runtime';
+
 export type Locale = 'en' | 'zh_CN';
 
 export interface Settings {
@@ -47,8 +49,8 @@ export interface MessageRequest {
   action: MessageAction;
   scriptId?: string;
   settings?: Settings;
-  request?: any;
-  script?: any;
+  request?: unknown;
+  script?: unknown;
   commitMessage?: string;
   forceOverwrite?: boolean;
   branch?: string;
@@ -70,4 +72,9 @@ export interface BatchPushResult {
 export interface PushError {
   code: PushErrorCode;
   message: string;
+}
+
+export interface MessageResponse {
+  success: boolean;
+  error?: string;
 }

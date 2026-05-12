@@ -1,4 +1,4 @@
-import type { Settings, GitHubFile, PushError } from '../../shared/types';
+import type { Settings, GitHubFile, PushError, PushErrorCode } from '../../shared/types';
 import type { Script } from '../../runtime';
 import { ScriptSource } from '../../shared/constants';
 

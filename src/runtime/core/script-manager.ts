@@ -4,14 +4,7 @@ import { MetadataParser } from '../parsers/metadata-parser';
 import { UrlMatcher } from '../parsers/url-matcher';
 import type { RuntimeAdapter } from '../types/adapter';
 import { ScriptSource } from '../../shared/constants';
-
-function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
+import { generateUUID } from '../../shared/utils/uuid';
 
 export class ScriptManager {
   private scripts: Map<string, Script> = new Map();
@@ -90,9 +83,5 @@ export class ScriptManager {
 
   async saveToStorage(key: string = 'scripts'): Promise<void> {
     await this.adapter.storage.set(key, this.getAllScripts());
-  }
-
-  private generateId(fileName: string): string {
-    return `${fileName}-${Date.now()}`;
   }
 }
