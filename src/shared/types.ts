@@ -21,7 +21,8 @@ export type MessageAction =
   | 'saveSettings'
   | 'unbindRepo'
   | 'executeScripts'
-  | 'injectScript';
+  | 'injectScript'
+  | 'gmBridge';
 
 export interface MessageRequest {
   action: MessageAction;
@@ -29,6 +30,7 @@ export interface MessageRequest {
   settings?: Settings;
   url?: string;
   script?: any;
+  request?: any;
 }
 
 export interface MessageResponse {

@@ -2,11 +2,12 @@ import { syncScripts } from '../services/sync-service';
 import { getScripts, toggleScript } from '../services/script-service';
 import { getSettings, saveSettings, unbindRepo } from '../services/storage-service';
 import { executeScripts, injectScript } from '../services/execution-service';
+import { handleGMBridgeRequest } from '../services/gm-bridge-service';
 import type { MessageRequest, MessageResponse } from '../../shared/types';
 
 export function setupMessageHandler(): void {
   chrome.runtime.onMessage.addListener(
-    (request: MessageRequest, sender, sendResponse: (response: MessageResponse) => void) => {
+    (request: MessageRequest, sender, sendResponse: (response: any) => void) => {
       let handled = false;
 
       switch (request.action) {
@@ -46,7 +47,13 @@ export function setupMessageHandler(): void {
           break;
         case 'injectScript':
           if (request.script && sender.tab?.id) {
-            injectScript(request.script, sender.tab.id).then(response => sendResponse(response));
+            injectScript(request.script, sender.tab.id).then(response => sendResponse(response as MessageResponse));
+          }
+          handled = true;
+          break;
+        case 'gmBridge':
+          if (request.request) {
+            handleGMBridgeRequest(request.request).then(sendResponse);
           }
           handled = true;
           break;

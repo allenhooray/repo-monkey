@@ -7,7 +7,7 @@ export class ChromeAdapter implements RuntimeAdapter {
     this.tabId = tabId;
   }
 
-  async injectScript(content: string, name: string): Promise<void> {
+  async injectScript(wrappedCode: string, name: string): Promise<void> {
     let targetTabId = this.tabId;
 
     if (!targetTabId) {
@@ -20,14 +20,18 @@ export class ChromeAdapter implements RuntimeAdapter {
 
     await chrome.scripting.executeScript({
       target: { tabId: targetTabId },
-      func: (scriptContent: string, scriptName: string) => {
+      func: (code: string, scriptName: string) => {
         try {
-          eval(scriptContent);
+          const script = document.createElement('script');
+          script.setAttribute('data-repo-monkey', scriptName);
+          script.textContent = code;
+          (document.head || document.documentElement || document.body).appendChild(script);
+          script.parentNode?.removeChild(script);
         } catch (error) {
-          console.error(`Error executing script ${scriptName}:`, error);
+          console.error('[RepoMonkey] Failed to inject script ' + scriptName + ':', error);
         }
       },
-      args: [content, name],
+      args: [wrappedCode, name],
       world: 'MAIN',
     });
   }

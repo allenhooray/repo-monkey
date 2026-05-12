@@ -1,5 +1,6 @@
 import type { Script } from '../types/script';
 import type { RuntimeAdapter } from '../types/adapter';
+import { wrapScript } from './script-wrapper';
 
 export class ScriptExecutor {
   private adapter: RuntimeAdapter;
@@ -10,7 +11,8 @@ export class ScriptExecutor {
 
   async execute(script: Script): Promise<void> {
     try {
-      await this.adapter.injectScript(script.content, script.name);
+      const wrapped = wrapScript({ script });
+      await this.adapter.injectScript(wrapped, script.name);
     } catch (error) {
       console.error(`[ScriptExecutor] Failed to execute ${script.name}:`, error);
       throw error;
