@@ -6,14 +6,16 @@ import { javascript } from '@codemirror/lang-javascript';
 import { lineNumbers } from '@codemirror/view';
 import { keymap } from '@codemirror/view';
 import { defaultKeymap, indentWithTab } from '@codemirror/commands';
-import type { Locale, Settings } from '../shared/types';
+import type { Locale, Settings, BatchPushResult } from '../shared/types';
 import { availableLocales, currentLocale, setLocale, t as translate } from '../shared/i18n';
 import { parseRepoInput } from '../shared/utils/repo-parser';
 import { ScriptSource } from '../shared/constants';
 import type { Script } from '../runtime';
+import { diffLines } from 'diff';
 
 type StatusType = 'success' | 'error' | 'loading' | '';
 type TabKey = 'general' | 'repository' | 'scripts';
+type PushStatus = 'idle' | 'pushing' | 'success' | 'conflict';
 
 const settings = ref<Settings | null>(null);
 const loading = ref(true);
@@ -30,12 +32,43 @@ const isFullscreen = ref(false);
 const editorContainer = ref<HTMLElement | null>(null);
 let editorView: EditorView | null = null;
 
+const pushStatus = ref<PushStatus>('idle');
+const commitMessageInput = ref('');
+const showCommitMessageDialog = ref(false);
+const showConflictDialog = ref(false);
+const conflictRemoteContent = ref('');
+
+const showDiffDialog = ref(false);
+const diffRemoteContent = ref('');
+const diffLocalContent = ref('');
+const diffContent = ref('');
+
+const showDeleteMenu = ref(false);
+const showBatchPushProgress = ref(false);
+const batchPushResult = ref<BatchPushResult | null>(null);
+const showBatchPushResult = ref(false);
+
+const isBatchPushing = ref(false);
+
 const isBound = computed(
   () =>
     !!settings.value?.accessToken &&
     !!settings.value?.repoOwner &&
     !!settings.value?.repoName,
 );
+
+const dirtyScriptsCount = computed(() => {
+  return scripts.value.filter(s => 
+    s.source === ScriptSource.LOCAL || s.source === ScriptSource.MODIFIED || s.dirty
+  ).length;
+});
+
+const orphanScriptsCount = computed(() => {
+  return scripts.value.filter(s => s.orphan).length;
+});
+
+const hasDirtyScripts = computed(() => dirtyScriptsCount > 0);
+const hasOrphanScripts = computed(() => orphanScriptsCount > 0);
 
 const showForm = computed(() => editing.value || !isBound.value);
 
@@ -70,7 +103,20 @@ const isRemoteScript = computed(() => {
 });
 
 const isModifiedScript = computed(() => {
-  return selectedScript.value?.source === ScriptSource.MODIFIED;
+  const script = selectedScript.value;
+  if (!script || script.id === 'new') return false;
+  return script.source === ScriptSource.MODIFIED || script.dirty;
+});
+
+const canPush = computed(() => {
+  return (
+    isBound.value &&
+    selectedScript.value &&
+    (selectedScript.value.source === ScriptSource.LOCAL ||
+      selectedScript.value.source === ScriptSource.MODIFIED ||
+      selectedScript.value.dirty) &&
+    pushStatus.value !== 'pushing'
+  );
 });
 
 const editorContent = computed({
@@ -363,19 +409,19 @@ async function handleSaveScript(): Promise<void> {
 
 async function handleDeleteScript(): Promise<void> {
   if (!selectedScriptId.value || selectedScriptId.value === 'new') return;
-  
-  const confirmMessage = isLocalScript.value 
-    ? t('confirmDeleteLocalScript') 
+
+  const confirmMessage = isLocalScript.value
+    ? t('confirmDeleteLocalScript')
     : t('confirmDeleteRemoteScript');
-  
+
   if (!confirm(confirmMessage)) return;
-  
+
   try {
     const response = await chrome.runtime.sendMessage({
       action: 'deleteScript',
       scriptId: selectedScriptId.value,
     });
-    
+
     if (response.success) {
       scripts.value = response.scripts as Script[];
       selectedScriptId.value = null;
@@ -386,6 +432,104 @@ async function handleDeleteScript(): Promise<void> {
   } catch (error) {
     setStatus('error', `${t('error')} ${(error as Error).message}`);
   }
+}
+
+function handlePushScript(skipDiff = false): void {
+  if (!canPush.value || !selectedScript.value) return;
+
+  // Show diff for non-local scripts unless skipDiff is true
+  if (!skipDiff && selectedScript.value.source !== ScriptSource.LOCAL) {
+    handleViewDiff();
+    return;
+  }
+
+  commitMessageInput.value =
+    selectedScript.value.source === ScriptSource.LOCAL
+      ? `Add ${selectedScript.value.fileName}`
+      : `Update ${selectedScript.value.fileName}`;
+  showCommitMessageDialog.value = true;
+}
+
+async function confirmPush(): Promise<void> {
+  showCommitMessageDialog.value = false;
+  await doPush(false);
+}
+
+async function doPush(forceOverwrite: boolean): Promise<void> {
+  if (!selectedScriptId.value) return;
+
+  pushStatus.value = 'pushing';
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'pushScript',
+      scriptId: selectedScriptId.value,
+      commitMessage: commitMessageInput.value,
+      forceOverwrite,
+    });
+
+    if (response.success) {
+      scripts.value = response.scripts as Script[];
+      pushStatus.value = 'success';
+      setStatus('success', 'Successfully pushed to GitHub');
+      setTimeout(() => {
+        pushStatus.value = 'idle';
+        clearStatus();
+      }, 2000);
+    } else {
+      if (response.errorCode === 'CONFLICT') {
+        pushStatus.value = 'conflict';
+        showConflictDialog.value = true;
+      } else {
+        pushStatus.value = 'idle';
+        setStatus('error', response.error || 'Push failed');
+      }
+    }
+  } catch (error) {
+    pushStatus.value = 'idle';
+    setStatus('error', `${(error as Error).message}`);
+  }
+}
+
+async function handleConflictView(): Promise<void> {
+  if (!selectedScript.value || !settings.value) return;
+
+  try {
+    const remotePath = selectedScript.value.remotePath || selectedScript.value.fileName;
+    const response = await fetch(
+      `https://api.github.com/repos/${settings.value.repoOwner}/${settings.value.repoName}/contents/${encodeURIComponent(remotePath)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${settings.value.accessToken}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      // 正确解码 UTF-8 编码的 base64 内容
+      const binaryString = atob(data.content);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const decoded = new TextDecoder('utf-8').decode(bytes);
+      conflictRemoteContent.value = decoded;
+    }
+  } catch (error) {
+    console.error('Failed to fetch remote content', error);
+  }
+}
+
+async function handleConflictOverwrite(): Promise<void> {
+  showConflictDialog.value = false;
+  await doPush(true);
+}
+
+function handleConflictCancel(): void {
+  showConflictDialog.value = false;
+  pushStatus.value = 'idle';
 }
 
 function handleSelectScript(scriptId: string): void {
@@ -499,7 +643,141 @@ onMounted(() => {
   document.addEventListener('fullscreenchange', () => {
     isFullscreen.value = !!document.fullscreenElement;
   });
+  
+  document.addEventListener('click', (e) => {
+    if (showDeleteMenu.value) {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.delete-menu-trigger') && !target.closest('.delete-menu')) {
+        showDeleteMenu.value = false;
+      }
+    }
+  });
 });
+
+async function handleDeleteFromRepo(): Promise<void> {
+  if (!selectedScriptId.value || selectedScriptId.value === 'new') return;
+  
+  if (!confirm(t('confirmDeleteFromRepo'))) return;
+  
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'deleteFromRepo',
+      scriptId: selectedScriptId.value,
+    });
+    
+    if (response.success) {
+      scripts.value = response.scripts as Script[];
+      selectedScriptId.value = null;
+      destroyEditor();
+      setStatus('success', t('deleteSuccess'));
+      setTimeout(clearStatus, 2000);
+    } else {
+      setStatus('error', response.error || 'Delete failed');
+    }
+  } catch (error) {
+    setStatus('error', `${t('error')} ${(error as Error).message}`);
+  }
+  
+  showDeleteMenu.value = false;
+}
+
+async function handleBatchPush(): Promise<void> {
+  if (!hasDirtyScripts.value || isBatchPushing.value) return;
+  
+  isBatchPushing.value = true;
+  showBatchPushProgress.value = true;
+  
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'batchPush',
+    });
+    
+    if (response.success) {
+      scripts.value = response.scripts as Script[];
+      batchPushResult.value = response.batchResult as BatchPushResult;
+      showBatchPushProgress.value = false;
+      showBatchPushResult.value = true;
+    } else {
+      setStatus('error', response.error || 'Batch push failed');
+      isBatchPushing.value = false;
+      showBatchPushProgress.value = false;
+    }
+  } catch (error) {
+    setStatus('error', `${t('error')} ${(error as Error).message}`);
+    isBatchPushing.value = false;
+    showBatchPushProgress.value = false;
+  }
+}
+
+function closeBatchPushResult(): void {
+  showBatchPushResult.value = false;
+  batchPushResult.value = null;
+  isBatchPushing.value = false;
+}
+
+async function handleViewDiff(): Promise<void> {
+  if (!selectedScriptId.value || selectedScriptId.value === 'new') return;
+  
+  const script = scripts.value.find(s => s.id === selectedScriptId.value);
+  if (!script || script.source === ScriptSource.LOCAL) return;
+  
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'getRemoteContent',
+      scriptId: selectedScriptId.value,
+    });
+    
+    if (response.success) {
+      diffRemoteContent.value = response.content as string;
+      diffLocalContent.value = editorContent.value;
+      
+      const diffResult = diffLines(diffRemoteContent.value, diffLocalContent.value);
+      let html = '';
+      diffResult.forEach(part => {
+        if (part.added) {
+          html += `<span style="background-color: rgba(46, 204, 113, 0.2); display: block;">+${part.value}</span>`;
+        } else if (part.removed) {
+          html += `<span style="background-color: rgba(231, 76, 60, 0.2); display: block;">-${part.value}</span>`;
+        } else {
+          html += `<span style="display: block;">${part.value}</span>`;
+        }
+      });
+      diffContent.value = html;
+      
+      showDiffDialog.value = true;
+    } else {
+      setStatus('error', response.error || 'Failed to fetch remote content');
+    }
+  } catch (error) {
+    setStatus('error', `${t('error')} ${(error as Error).message}`);
+  }
+}
+
+async function handlePullFromGitHub(): Promise<void> {
+  if (!selectedScriptId.value || selectedScriptId.value === 'new') return;
+  
+  if (!confirm(t('confirmPull'))) return;
+  
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'pullScript',
+      scriptId: selectedScriptId.value,
+    });
+    
+    if (response.success) {
+      scripts.value = response.scripts as Script[];
+      setStatus('success', t('pullSuccess'));
+      setTimeout(clearStatus, 2000);
+      nextTick(() => {
+        initEditor();
+      });
+    } else {
+      setStatus('error', response.error || 'Pull failed');
+    }
+  } catch (error) {
+    setStatus('error', `${t('error')} ${(error as Error).message}`);
+  }
+}
 </script>
 
 <template>
@@ -655,16 +933,27 @@ onMounted(() => {
                     class="search-input"
                   />
                 </div>
-                <button class="btn btn-primary btn-new-script" @click="handleNewScript">
-                  {{ t('newScript') }}
-                </button>
+                <div class="btn-group">
+                  <button 
+                    v-if="hasDirtyScripts"
+                    class="btn btn-primary"
+                    :disabled="isBatchPushing"
+                    @click="handleBatchPush"
+                  >
+                    {{ t('pushAllChanges') }}
+                    <span class="dirty-count-badge">{{ dirtyScriptsCount }}</span>
+                  </button>
+                  <button class="btn btn-primary btn-new-script" @click="handleNewScript">
+                    {{ t('newScript') }}
+                  </button>
+                </div>
               </div>
               
               <div class="script-list">
                 <div
                   v-for="script in filteredScripts"
                   :key="script.id"
-                  :class="['script-item', { active: selectedScriptId === script.id }]"
+                  :class="['script-item', { active: selectedScriptId === script.id, orphan: script.orphan }]"
                   @click="handleSelectScript(script.id)"
                 >
                   <div class="script-item-header">
@@ -676,6 +965,7 @@ onMounted(() => {
                       class="script-toggle"
                     />
                     <span class="script-name">{{ script.name }}</span>
+                    <span v-if="script.orphan" class="orphan-badge">Orphan</span>
                   </div>
                   <div class="script-item-meta">
                     <span
@@ -717,9 +1007,48 @@ onMounted(() => {
                     <button class="btn btn-secondary" @click="handleFullscreen">
                       {{ isFullscreen ? t('exitFullscreen') : t('fullscreen') }}
                     </button>
-                    <button v-if="selectedScriptId !== 'new'" class="btn btn-danger" @click="handleDeleteScript">
-                      {{ t('delete') }}
+                    <button 
+                      v-if="isModifiedScript"
+                      class="btn btn-secondary"
+                      @click="handleViewDiff"
+                    >
+                      {{ t('viewDiff') }}
                     </button>
+                    <button 
+                      v-if="isModifiedScript"
+                      class="btn btn-secondary"
+                      @click="handlePullFromGitHub"
+                    >
+                      {{ t('pullFromGitHub') }}
+                    </button>
+                    <button 
+                      v-if="canPush" 
+                      class="btn btn-primary"
+                      :disabled="pushStatus === 'pushing'"
+                      @click="handlePushScript"
+                    >
+                      {{ pushStatus === 'pushing' ? 'Pushing...' : 'Push to GitHub' }}
+                    </button>
+                    <div v-if="selectedScriptId !== 'new'" class="delete-menu-container">
+                      <button 
+                        class="btn btn-danger delete-menu-trigger"
+                        @click.stop="showDeleteMenu = !showDeleteMenu"
+                      >
+                        {{ t('delete') }}
+                      </button>
+                      <div v-if="showDeleteMenu" class="delete-menu">
+                        <button class="delete-menu-item" @click="handleDeleteScript">
+                          {{ t('deleteLocal') }}
+                        </button>
+                        <button 
+                          v-if="selectedScript?.source !== ScriptSource.LOCAL"
+                          class="delete-menu-item danger"
+                          @click="handleDeleteFromRepo"
+                        >
+                          {{ t('deleteFromRepo') }}
+                        </button>
+                      </div>
+                    </div>
                     <button class="btn btn-primary" @click="handleSaveScript">
                       {{ t('save') }}
                     </button>
@@ -737,6 +1066,108 @@ onMounted(() => {
         </section>
       </template>
     </main>
+    
+    <!-- Commit Message Dialog -->
+    <div v-if="showCommitMessageDialog" class="dialog-overlay">
+      <div class="dialog">
+        <h3 class="dialog-title">Commit Message</h3>
+        <div class="form-group">
+          <input
+            v-model="commitMessageInput"
+            type="text"
+            class="input"
+            placeholder="Enter commit message"
+          />
+        </div>
+        <div class="dialog-actions">
+          <button class="btn btn-secondary" @click="showCommitMessageDialog = false">
+            Cancel
+          </button>
+          <button class="btn btn-primary" @click="confirmPush">
+            Push
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Conflict Dialog -->
+    <div v-if="showConflictDialog" class="dialog-overlay">
+      <div class="dialog conflict-dialog">
+        <h3 class="dialog-title">Conflict Detected</h3>
+        <p class="dialog-description">
+          The remote file has changed since your last sync. What would you like to do?
+        </p>
+        <div v-if="conflictRemoteContent" class="conflict-content">
+          <h4>Remote Content:</h4>
+          <pre>{{ conflictRemoteContent }}</pre>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn btn-secondary" @click="handleConflictCancel">
+            Cancel
+          </button>
+          <button class="btn btn-secondary" @click="handleConflictView">
+            View Remote
+          </button>
+          <button class="btn btn-primary" @click="handleConflictOverwrite">
+            Overwrite Remote
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Diff Dialog -->
+    <div v-if="showDiffDialog" class="dialog-overlay">
+      <div class="dialog diff-dialog">
+        <h3 class="dialog-title">{{ t('diffDialogTitle') }}</h3>
+        <div class="diff-content">
+          <div v-html="diffContent" class="diff-text"></div>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn btn-secondary" @click="showDiffDialog = false">
+            Cancel
+          </button>
+          <button class="btn btn-primary" @click="showDiffDialog = false; handlePushScript(true)">
+            {{ t('continuePush') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch Push Progress Dialog -->
+    <div v-if="showBatchPushProgress" class="dialog-overlay">
+      <div class="dialog">
+        <h3 class="dialog-title">{{ t('batchPushProgress') }}</h3>
+        <div class="batch-progress-indicator">
+          <div class="progress-spinner"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch Push Result Dialog -->
+    <div v-if="showBatchPushResult" class="dialog-overlay">
+      <div class="dialog">
+        <h3 class="dialog-title">Push Complete</h3>
+        <div class="batch-result-summary">
+          <div class="result-item success">
+            <span class="result-count">{{ batchPushResult?.success }}</span>
+            <span class="result-label">Succeeded</span>
+          </div>
+          <div class="result-item failed">
+            <span class="result-count">{{ batchPushResult?.failed }}</span>
+            <span class="result-label">Failed</span>
+          </div>
+          <div class="result-item conflict">
+            <span class="result-count">{{ batchPushResult?.conflict }}</span>
+            <span class="result-label">Conflicts</span>
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn btn-primary" @click="closeBatchPushResult">
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1223,6 +1654,209 @@ onMounted(() => {
   overflow: hidden;
   min-width: 0;
 }
+
+.dirty-count-badge {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.delete-menu-container {
+  position: relative;
+}
+
+.delete-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #2d2d2d;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 100;
+  min-width: 180px;
+}
+
+.delete-menu-item {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  color: #e0e0e0;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  font-size: 14px;
+}
+
+.delete-menu-item:hover {
+  background: #3d3d3d;
+}
+
+.delete-menu-item.danger {
+  color: #e74c3c;
+}
+
+.delete-menu-item.danger:hover {
+  background: rgba(231, 76, 60, 0.1);
+}
+
+.orphan-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+}
+
+.script-item.orphan {
+  border-color: rgba(231, 76, 60, 0.3);
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.dialog {
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.dialog-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #f0f0f0;
+}
+
+.dialog-description {
+  color: #aaa;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.conflict-content {
+  margin: 16px 0;
+  padding: 16px;
+  background: #2d2d2d;
+  border-radius: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.conflict-content h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #aaa;
+}
+
+.conflict-content pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 12px;
+  color: #e0e0e0;
+}
+
+.diff-dialog {
+  max-width: 900px;
+}
+
+.diff-content {
+  margin: 16px 0;
+  padding: 16px;
+  background: #2d2d2d;
+  border-radius: 8px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.diff-text {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.batch-progress-indicator {
+  display: flex;
+  justify-content: center;
+  padding: 48px;
+}
+
+.progress-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #404040;
+  border-top-color: #2ecc71;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.batch-result-summary {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  padding: 24px 0;
+}
+
+.result-item {
+  text-align: center;
+}
+
+.result-count {
+  display: block;
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.result-label {
+  display: block;
+  font-size: 14px;
+  color: #aaa;
+}
+
+.result-item.success .result-count {
+  color: #2ecc71;
+}
+
+.result-item.failed .result-count {
+  color: #e74c3c;
+}
+
+.result-item.conflict .result-count {
+  color: #f59e0b;
+}
 </style>
 
 <style>
@@ -1247,5 +1881,89 @@ onMounted(() => {
 
 .code-editor .cm-scroller::-webkit-scrollbar-thumb:active {
   background: #777;
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.dialog {
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 400px;
+  max-width: 90%;
+}
+
+.dialog-title {
+  font-size: 20px;
+  margin: 0 0 16px 0;
+  color: #e0e0e0;
+}
+
+.dialog-description {
+  color: #aaa;
+  margin: 0 0 16px 0;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.conflict-dialog {
+  max-width: 600px;
+  max-height: 80vh;
+  overflow: auto;
+}
+
+.conflict-content {
+  margin: 16px 0;
+  background: #2d2d2d;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.conflict-content h4 {
+  margin: 0 0 8px 0;
+  color: #aaa;
+  font-size: 14px;
+}
+
+.conflict-content pre {
+  margin: 0;
+  color: #e0e0e0;
+  white-space: pre-wrap;
+  font-size: 12px;
+  max-height: 300px;
+  overflow: auto;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #2d2d2d;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #2ecc71;
 }
 </style>

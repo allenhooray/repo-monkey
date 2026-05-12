@@ -17,6 +17,14 @@ export interface GitHubFile {
   path?: string;
 }
 
+export type PushErrorCode =
+  | 'TOKEN_INVALID'
+  | 'PERMISSION_DENIED'
+  | 'CONFLICT'
+  | 'PATH_INVALID'
+  | 'NETWORK_ERROR'
+  | 'FILE_EXISTS';
+
 export type MessageAction =
   | 'syncScripts'
   | 'getScripts'
@@ -27,7 +35,13 @@ export type MessageAction =
   | 'gmBridge'
   | 'createScript'
   | 'updateScript'
-  | 'deleteScript';
+  | 'deleteScript'
+  | 'pushScript'
+  | 'deleteFromRepo'
+  | 'batchPush'
+  | 'pullScript'
+  | 'getRemoteContent'
+  | 'getBranches';
 
 export interface MessageRequest {
   action: MessageAction;
@@ -35,4 +49,25 @@ export interface MessageRequest {
   settings?: Settings;
   request?: any;
   script?: any;
+  commitMessage?: string;
+  forceOverwrite?: boolean;
+  branch?: string;
+}
+
+export interface BatchPushResult {
+  success: number;
+  failed: number;
+  conflict: number;
+  results: Array<{
+    scriptId: string;
+    fileName: string;
+    success: boolean;
+    errorCode?: PushErrorCode;
+    error?: string;
+  }>;
+}
+
+export interface PushError {
+  code: PushErrorCode;
+  message: string;
 }

@@ -282,5 +282,77 @@
   "searchScripts": {
     "message": "搜索脚本...",
     "description": "搜索框占位符"
+  },
+  "deleteLocal": {
+    "message": "仅本地删除",
+    "description": "仅本地删除脚本选项"
+  },
+  "deleteFromRepo": {
+    "message": "从仓库删除",
+    "description": "从仓库删除脚本选项"
+  },
+  "cleanupOrphan": {
+    "message": "清理孤立脚本",
+    "description": "清理孤立脚本按钮"
+  },
+  "confirmDeleteFromRepo": {
+    "message": "确定要从仓库删除此脚本吗？此操作将同时删除本地副本。",
+    "description": "从仓库删除脚本确认提示"
+  },
+  "confirmCleanupOrphan": {
+    "message": "确定要清理所有孤立脚本吗？这些脚本在仓库中已不存在。",
+    "description": "清理孤立脚本确认提示"
+  },
+  "pushAllChanges": {
+    "message": "推送所有变更",
+    "description": "批量推送按钮"
+  },
+  "dirtyScriptsCount": {
+    "message": "个待推送",
+    "description": "待推送脚本计数徽标"
+  },
+  "batchPushProgress": {
+    "message": "正在批量推送...",
+    "description": "批量推送进度提示"
+  },
+  "batchPushResult": {
+    "message": "推送完成：成功 {success}，失败 {failed}，冲突 {conflict}",
+    "description": "批量推送结果汇总"
+  },
+  "viewDiff": {
+    "message": "查看差异",
+    "description": "查看差异按钮"
+  },
+  "diffDialogTitle": {
+    "message": "内容差异对比",
+    "description": "差异对比对话框标题"
+  },
+  "remoteContent": {
+    "message": "远端内容",
+    "description": "差异对比对话框中远端内容标签"
+  },
+  "localContent": {
+    "message": "本地内容",
+    "description": "差异对比对话框中本地内容标签"
+  },
+  "continuePush": {
+    "message": "继续推送",
+    "description": "继续推送按钮"
+  },
+  "pullFromGitHub": {
+    "message": "从 GitHub 拉取",
+    "description": "拉取按钮"
+  },
+  "confirmPull": {
+    "message": "确定要从 GitHub 拉取并覆盖本地内容吗？此操作将丢弃本地修改。",
+    "description": "拉取确认提示"
+  },
+  "pullSuccess": {
+    "message": "拉取成功",
+    "description": "拉取成功提示"
+  },
+  "deleteSuccess": {
+    "message": "删除成功",
+    "description": "删除成功提示"
   }
 }

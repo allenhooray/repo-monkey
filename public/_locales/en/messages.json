@@ -282,5 +282,77 @@
   "searchScripts": {
     "message": "Search scripts...",
     "description": "Search box placeholder"
+  },
+  "deleteLocal": {
+    "message": "Delete Local Only",
+    "description": "Option to delete script locally only"
+  },
+  "deleteFromRepo": {
+    "message": "Delete from Repo",
+    "description": "Option to delete script from repo"
+  },
+  "cleanupOrphan": {
+    "message": "Clean up Orphans",
+    "description": "Button to clean up orphaned scripts"
+  },
+  "confirmDeleteFromRepo": {
+    "message": "Are you sure you want to delete this script from the repo? This will also remove the local copy.",
+    "description": "Confirmation prompt for deleting script from repo"
+  },
+  "confirmCleanupOrphan": {
+    "message": "Are you sure you want to clean up all orphaned scripts? These scripts no longer exist in the repo.",
+    "description": "Confirmation prompt for cleaning up orphaned scripts"
+  },
+  "pushAllChanges": {
+    "message": "Push All Changes",
+    "description": "Button for batch pushing all changes"
+  },
+  "dirtyScriptsCount": {
+    "message": "to push",
+    "description": "Badge count for dirty scripts"
+  },
+  "batchPushProgress": {
+    "message": "Pushing all changes...",
+    "description": "Batch push progress message"
+  },
+  "batchPushResult": {
+    "message": "Push complete: {success} succeeded, {failed} failed, {conflict} conflicts",
+    "description": "Batch push result summary"
+  },
+  "viewDiff": {
+    "message": "View Diff",
+    "description": "Button to view diff"
+  },
+  "diffDialogTitle": {
+    "message": "Content Diff",
+    "description": "Diff dialog title"
+  },
+  "remoteContent": {
+    "message": "Remote",
+    "description": "Remote content label in diff dialog"
+  },
+  "localContent": {
+    "message": "Local",
+    "description": "Local content label in diff dialog"
+  },
+  "continuePush": {
+    "message": "Continue Push",
+    "description": "Button to continue push"
+  },
+  "pullFromGitHub": {
+    "message": "Pull from GitHub",
+    "description": "Pull button"
+  },
+  "confirmPull": {
+    "message": "Are you sure you want to pull from GitHub and overwrite local content? This will discard local changes.",
+    "description": "Pull confirmation prompt"
+  },
+  "pullSuccess": {
+    "message": "Pulled successfully",
+    "description": "Pull success message"
+  },
+  "deleteSuccess": {
+    "message": "Deleted successfully",
+    "description": "Delete success message"
   }
 }

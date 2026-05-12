@@ -212,3 +212,29 @@ export async function migrateScriptsIfNeeded(): Promise<void> {
   
   console.log(`[RepoMonkey] Migrated ${migratedScripts.length} scripts to data version 1`);
 }
+
+export async function pullScript(scriptId: string, remoteContent: string, remoteSha: string): Promise<Script[]> {
+  const scripts = await getScripts();
+  const metadataParser = new MetadataParser();
+  const metadata = metadataParser.parse(remoteContent);
+  
+  const updatedScripts = scripts.map(script => {
+    if (script.id === scriptId) {
+      return {
+        ...script,
+        content: remoteContent,
+        remoteSha,
+        name: metadata.name || script.fileName.replace('.js', ''),
+        metadata,
+        source: ScriptSource.REMOTE,
+        dirty: false,
+        conflict: false,
+        updatedAt: new Date().toISOString(),
+      };
+    }
+    return script;
+  });
+  
+  await chrome.storage.local.set({ [STORAGE_KEY_SCRIPTS]: updatedScripts });
+  return updatedScripts;
+}
