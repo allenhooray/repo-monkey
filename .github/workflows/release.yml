@@ -31,10 +31,10 @@ jobs:
       - name: Build and package
         run: npm run build:zip
       
-      - name: Get version from manifest
+      - name: Get version from package.json
         id: get_version
         run: |
-          VERSION=$(node -e "console.log(require('./public/manifest.json').version)")
+          VERSION=$(node -e "console.log(require('./package.json').version)")
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "ZIP_FILE=repo-monkey-v$VERSION.zip" >> $GITHUB_OUTPUT
       

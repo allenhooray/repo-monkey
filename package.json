@@ -4,14 +4,17 @@
   "description": "Chrome extension that manages userscripts via GitHub",
   "type": "module",
   "scripts": {
-    "build": "node build.js",
-    "build:zip": "node build.js --zip",
-    "dev": "node build.js && echo \"Use 'npm run build' to build the extension\"",
-    "type-check": "npx tsc --noEmit"
+    "dev": "vite",
+    "build": "vite build",
+    "build:zip": "vite build && node scripts/zip.js",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.28",
     "@types/chrome": "^0.1.42",
+    "@types/node": "^22.9.0",
     "archiver": "^7.0.1",
-    "typescript": "^6.0.3"
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
   }
 }
