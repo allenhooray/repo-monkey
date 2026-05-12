@@ -2,6 +2,9 @@ import { syncScripts } from '../services/sync-service';
 import { syncRegistrations } from '../services/execution-service';
 import { SYNC_ALARM_NAME } from '../../shared/constants';
 
+/**
+ * 设置闹钟处理器
+ */
 export function setupAlarmHandler(): void {
   chrome.alarms.onAlarm.addListener(async (alarm: chrome.alarms.Alarm) => {
     if (alarm.name === SYNC_ALARM_NAME) {

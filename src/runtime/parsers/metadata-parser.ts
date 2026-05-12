@@ -1,6 +1,12 @@
 import type { ScriptMetadata } from '../types/metadata';
 
+/**
+ * 脚本元数据解析器 - 解析 UserScript 元数据块
+ */
 export class MetadataParser {
+  /**
+   * 从脚本源码中解析元数据
+   */
   parse(content: string): ScriptMetadata {
     const metadata: ScriptMetadata = {
       name: '',
@@ -68,13 +74,13 @@ export class MetadataParser {
     }
 
     // 解析 @run-at
-  const runAtMatch = content.match(/@run-at\s+(.+)/);
-  if (runAtMatch && runAtMatch[1]) {
-    const runAtValue = runAtMatch[1].trim();
-    if (['document-start', 'document-body', 'document-end', 'document-idle'].includes(runAtValue as any)) {
-      metadata.runAt = runAtValue as any;
+    const runAtMatch = content.match(/@run-at\s+(.+)/);
+    if (runAtMatch && runAtMatch[1]) {
+      const runAtValue = runAtMatch[1].trim();
+      if (['document-start', 'document-body', 'document-end', 'document-idle'].includes(runAtValue as any)) {
+        metadata.runAt = runAtValue as any;
+      }
     }
-  }
 
     return metadata;
   }

@@ -8,8 +8,14 @@ import type { MessageRequest, MessageResponse, BatchPushResult } from '../../sha
 import { ScriptSource, STORAGE_KEY_SCRIPTS } from '../../shared/constants';
 import type { Script } from '../../runtime';
 
+// 防止重复推送的互斥锁
 const PUSH_MUTEX_KEY = 'pushMutex';
 
+/**
+ * 获取推送锁
+ * @param scriptId - 脚本 ID
+ * @returns 是否成功获取锁
+ */
 async function acquirePushLock(scriptId: string): Promise<boolean> {
   const result = await chrome.storage.session.get(PUSH_MUTEX_KEY);
   const currentLock = result[PUSH_MUTEX_KEY];
@@ -20,10 +26,16 @@ async function acquirePushLock(scriptId: string): Promise<boolean> {
   return true;
 }
 
+/**
+ * 释放推送锁
+ */
 async function releasePushLock(): Promise<void> {
   await chrome.storage.session.remove(PUSH_MUTEX_KEY);
 }
 
+/**
+ * 设置消息处理器
+ */
 export function setupMessageHandler(): void {
   chrome.runtime.onMessage.addListener(
     (request: MessageRequest, _sender, sendResponse: (response: any) => void) => {

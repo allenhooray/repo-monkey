@@ -2,6 +2,9 @@ import type { Settings, GitHubFile, PushError, PushErrorCode } from '../../share
 import type { Script } from '../../runtime';
 import { ScriptSource } from '../../shared/constants';
 
+/**
+ * 将 Unicode 字符串编码为 Base64
+ */
 function encodeUnicodeToBase64(str: string): string {
   const encoder = new TextEncoder();
   const data = encoder.encode(str);
@@ -13,6 +16,9 @@ function encodeUnicodeToBase64(str: string): string {
   return btoa(binary);
 }
 
+/**
+ * 将 Base64 解码为 Unicode 字符串
+ */
 function decodeBase64ToUnicode(base64Str: string): string {
   const binaryString = atob(base64Str);
   const bytes = new Uint8Array(binaryString.length);
@@ -29,6 +35,9 @@ export interface PushResult {
   remotePath?: string;
 }
 
+/**
+ * 推送脚本到仓库
+ */
 export async function pushScriptToRepo(
   settings: Settings,
   script: Script,
@@ -47,12 +56,14 @@ export async function pushScriptToRepo(
   try {
     let currentSha: string | undefined;
     
+    // 检查文件是否已存在
     const checkResponse = await fetch(apiUrl, { headers });
     if (checkResponse.ok) {
       const fileInfo = await checkResponse.json();
       currentSha = fileInfo.sha;
     }
 
+    // 如果是本地脚本且文件已存在，且不强制覆盖，返回错误
     if (script.source === ScriptSource.LOCAL && currentSha && !forceOverwrite) {
       return {
         success: false,
@@ -68,6 +79,7 @@ export async function pushScriptToRepo(
       content: encodeUnicodeToBase64(script.content),
     };
 
+    // 如果是修改的脚本或强制覆盖，添加 sha
     if (script.source === ScriptSource.MODIFIED || forceOverwrite) {
       if (forceOverwrite && currentSha) {
         body.sha = currentSha;
@@ -134,6 +146,9 @@ export async function pushScriptToRepo(
   }
 }
 
+/**
+ * 递归获取目录内容
+ */
 async function fetchDirectoryContents(
   settings: Settings,
   path: string,
@@ -165,6 +180,9 @@ async function fetchDirectoryContents(
   return allFiles;
 }
 
+/**
+ * 从仓库获取文件列表
+ */
 export async function fetchFilesFromRepo(settings: Settings): Promise<GitHubFile[]> {
   const headers = {
     Authorization: `Bearer ${settings.accessToken}`,
@@ -174,11 +192,13 @@ export async function fetchFilesFromRepo(settings: Settings): Promise<GitHubFile
   let files: GitHubFile[] = [];
 
   try {
+    // 先尝试从 output 目录获取
     files = await fetchDirectoryContents(settings, 'output', headers);
     if (files.length === 0) {
       throw new Error('No files found in output directory');
     }
   } catch (e) {
+    // 如果失败，尝试从根目录获取
     try {
       files = await fetchDirectoryContents(settings, '', headers);
     } catch (rootErr) {
@@ -189,6 +209,9 @@ export async function fetchFilesFromRepo(settings: Settings): Promise<GitHubFile
   return files;
 }
 
+/**
+ * 获取文件内容
+ */
 export async function fetchFileContent(downloadUrl: string): Promise<string> {
   const response = await fetch(downloadUrl);
   return response.text();
@@ -199,6 +222,9 @@ export interface DeleteFileResult {
   error?: PushError;
 }
 
+/**
+ * 从仓库删除文件
+ */
 export async function deleteFileFromRepo(
   settings: Settings,
   remotePath: string,
@@ -274,6 +300,9 @@ export interface RemoteContentResult {
   error?: PushError;
 }
 
+/**
+ * 获取远程文件内容
+ */
 export async function fetchRemoteContent(
   settings: Settings,
   remotePath: string
@@ -347,6 +376,9 @@ export interface BranchesResult {
   error?: PushError;
 }
 
+/**
+ * 获取仓库分支列表
+ */
 export async function fetchBranches(settings: Settings): Promise<BranchesResult> {
   const headers = {
     Authorization: `Bearer ${settings.accessToken}`,
@@ -354,7 +386,7 @@ export async function fetchBranches(settings: Settings): Promise<BranchesResult>
   };
 
   try {
-    // Fetch repository info to get default branch
+    // 先获取仓库信息以获取默认分支
     const repoResponse = await fetch(
       `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}`,
       { headers }

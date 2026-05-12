@@ -3,11 +3,15 @@ export interface RepoInfo {
   repo: string;
 }
 
+/**
+ * 解析仓库输入，支持 owner/repo、HTTPS URL、SSH URL 格式
+ */
 export function parseRepoInput(input: string): RepoInfo | null {
   if (!input) return null;
 
   const trimmed = input.trim();
 
+  // 解析 owner/repo 格式
   const ownerRepoMatch = trimmed.match(/^([a-zA-Z0-9-_.]+)\/([a-zA-Z0-9-_.]+)$/);
   if (ownerRepoMatch) {
     return {
@@ -16,6 +20,7 @@ export function parseRepoInput(input: string): RepoInfo | null {
     };
   }
 
+  // 解析 HTTPS URL 格式
   const httpsMatch = trimmed.match(/^https?:\/\/github\.com\/([a-zA-Z0-9-_.]+)\/([a-zA-Z0-9-_.]+)(?:\.git)?\/?$/);
   if (httpsMatch) {
     return {
@@ -24,6 +29,7 @@ export function parseRepoInput(input: string): RepoInfo | null {
     };
   }
 
+  // 解析 SSH URL 格式
   const sshMatch = trimmed.match(/^git@github\.com:([a-zA-Z0-9-_.]+)\/([a-zA-Z0-9-_.]+)(?:\.git)?\/?$/);
   if (sshMatch) {
     return {

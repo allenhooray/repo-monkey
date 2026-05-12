@@ -1,5 +1,6 @@
 import type { Script } from '../types/script';
 
+// GM API 运行时源码
 const GM_RUNTIME_SOURCE = `
 (function initGMRuntime(scriptId, scriptName, scriptMetaStr, metadata, grants) {
   function callBridge(type, payload) {
@@ -191,10 +192,16 @@ const GM_RUNTIME_SOURCE = `
 })
 `;
 
+/**
+ * 安全的 JSON 序列化，防止 XSS
+ */
 function safeJson(value: unknown): string {
   return JSON.stringify(value).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 }
 
+/**
+ * 从脚本源码中提取 UserScript 元数据块
+ */
 function extractMetaBlock(source: string): string {
   const match = source.match(/\/\/\s*==UserScript==[\s\S]*?\/\/\s*==\/UserScript==/);
   return match ? match[0] : '';
@@ -204,6 +211,9 @@ export interface WrapOptions {
   script: Script;
 }
 
+/**
+ * 包装脚本，注入 GM API 运行时
+ */
 export function wrapScript({ script }: WrapOptions): string {
   const scriptId = safeJson(script.id);
   const scriptName = safeJson(script.name);

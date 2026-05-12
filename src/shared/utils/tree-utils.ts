@@ -10,6 +10,9 @@ export interface TreeNode<T = GitHubFile | Script> {
   file?: T;
 }
 
+/**
+ * 从扁平的文件列表构建目录树
+ */
 export function buildTree<T extends { path?: string; name: string; type?: 'dir' | 'file' }>(
   items: T[],
   pathField: keyof T = 'path' as keyof T
@@ -25,7 +28,7 @@ export function buildTree<T extends { path?: string; name: string; type?: 'dir' 
   const dirMap = new Map<string, TreeNode<T>>();
   dirMap.set('', root);
 
-  // 先处理所有目录
+  // 先排序，目录在前，文件在后
   const sortedItems = [...items].sort((a, b) => {
     const aType = (a as any).type;
     const bType = (b as any).type;
@@ -42,7 +45,7 @@ export function buildTree<T extends { path?: string; name: string; type?: 'dir' 
     const itemType = (item as any).type || 'file';
     
     if (itemType === 'dir') {
-      // 处理目录
+      // 处理目录 - 逐层创建
       let currentDir = root;
       for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
@@ -62,10 +65,10 @@ export function buildTree<T extends { path?: string; name: string; type?: 'dir' 
         currentDir = dirMap.get(currentPath)!;
       }
     } else {
-      // 处理文件
+      // 处理文件 - 先确保父目录存在
       let currentDir = root;
       
-      // 确保父目录存在
+      // 创建父目录
       for (let i = 0; i < parts.length - 1; i++) {
         const part = parts[i];
         const currentPath = parts.slice(0, i + 1).join('/');
@@ -84,7 +87,7 @@ export function buildTree<T extends { path?: string; name: string; type?: 'dir' 
         currentDir = dirMap.get(currentPath)!;
       }
       
-      // 添加文件
+      // 添加文件节点
       const fileName = parts[parts.length - 1] || item.name;
       const fileNode: TreeNode<T> = {
         id: itemPath,
@@ -97,7 +100,7 @@ export function buildTree<T extends { path?: string; name: string; type?: 'dir' 
     }
   }
 
-  // 对每个目录的子节点进行排序（目录在前，文件在后，按名称排序）
+  // 递归排序所有目录的子节点
   const sortChildren = (node: TreeNode<T>) => {
     if (node.children) {
       node.children.sort((a, b) => {
@@ -113,6 +116,9 @@ export function buildTree<T extends { path?: string; name: string; type?: 'dir' 
   return root;
 }
 
+/**
+ * 将目录树扁平化为数组，包含深度信息
+ */
 export function flattenTree<T>(root: TreeNode<T>): (TreeNode<T> & { depth: number })[] {
   const result: (TreeNode<T> & { depth: number })[] = [];
   const traverse = (node: TreeNode<T>, depth: number = 0) => {

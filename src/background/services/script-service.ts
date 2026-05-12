@@ -3,14 +3,23 @@ import { STORAGE_KEY_SCRIPTS, ScriptSource } from '../../shared/constants';
 import { generateUUID, isValidUUID } from '../../shared/utils/uuid';
 import type { Script } from '../../runtime';
 
+/**
+ * 获取所有脚本
+ * @returns 脚本数组
+ */
 export async function getScripts(): Promise<Script[]> {
   const result = await chrome.storage.local.get(STORAGE_KEY_SCRIPTS);
   return (result[STORAGE_KEY_SCRIPTS] as Script[]) || [];
 }
 
+/**
+ * 保存远程脚本并合并本地修改
+ * @param remoteScripts - 远程脚本数组
+ */
 export async function saveScripts(remoteScripts: Script[]): Promise<void> {
   const existingScripts = await getScripts();
   
+  // 构建索引便于查找
   const existingById = new Map(existingScripts.map(s => [s.id, s]));
   const existingByRemotePath = new Map(
     existingScripts
@@ -21,6 +30,7 @@ export async function saveScripts(remoteScripts: Script[]): Promise<void> {
   const mergedScripts: Script[] = [];
   const processedRemotePaths = new Set<string>();
   
+  // 处理远程脚本
   for (const remoteScript of remoteScripts) {
     const remotePath = remoteScript.remotePath || remoteScript.fileName;
     processedRemotePaths.add(remotePath);
@@ -28,6 +38,7 @@ export async function saveScripts(remoteScripts: Script[]): Promise<void> {
     const existingByPath = existingByRemotePath.get(remotePath);
     
     if (existingByPath) {
+      // 如果本地有修改或脏标记，检查是否冲突
       if (existingByPath.source === ScriptSource.LOCAL || existingByPath.dirty) {
         if (remoteScript.remoteSha && existingByPath.remoteSha !== remoteScript.remoteSha) {
           mergedScripts.push({ ...existingByPath, conflict: true });
@@ -35,6 +46,7 @@ export async function saveScripts(remoteScripts: Script[]): Promise<void> {
           mergedScripts.push(existingByPath);
         }
       } else {
+        // 更新远程脚本
         mergedScripts.push({
           ...remoteScript,
           id: existingByPath.id,
@@ -48,6 +60,7 @@ export async function saveScripts(remoteScripts: Script[]): Promise<void> {
         });
       }
     } else {
+      // 新增远程脚本
       mergedScripts.push({
         ...remoteScript,
         id: generateUUID(),
@@ -60,12 +73,14 @@ export async function saveScripts(remoteScripts: Script[]): Promise<void> {
     }
   }
   
+  // 处理本地修改或未在远程的脚本
   for (const existingScript of existingScripts) {
     if (existingScript.source === ScriptSource.LOCAL || existingScript.dirty) {
       if (!mergedScripts.some(s => s.id === existingScript.id)) {
         mergedScripts.push(existingScript);
       }
     } else if (existingScript.remotePath && !processedRemotePaths.has(existingScript.remotePath)) {
+      // 标记为孤儿脚本
       mergedScripts.push({ ...existingScript, orphan: true });
     }
   }
@@ -73,6 +88,11 @@ export async function saveScripts(remoteScripts: Script[]): Promise<void> {
   await chrome.storage.local.set({ [STORAGE_KEY_SCRIPTS]: mergedScripts });
 }
 
+/**
+ * 切换脚本启用状态
+ * @param scriptId - 脚本 ID
+ * @returns 更新后的脚本数组
+ */
 export async function toggleScript(scriptId: string): Promise<Script[]> {
   const scripts = await getScripts();
   const updatedScripts = scripts.map(script =>
@@ -82,6 +102,11 @@ export async function toggleScript(scriptId: string): Promise<Script[]> {
   return updatedScripts;
 }
 
+/**
+ * 创建新脚本
+ * @param script - 脚本信息（不含 id 和时间）
+ * @returns 更新后的脚本数组
+ */
 export async function createScript(script: Omit<Script, 'id' | 'createdAt' | 'updatedAt'>): Promise<Script[]> {
   const scripts = await getScripts();
   const metadataParser = new MetadataParser();
@@ -104,6 +129,11 @@ export async function createScript(script: Omit<Script, 'id' | 'createdAt' | 'up
   return updatedScripts;
 }
 
+/**
+ * 更新脚本
+ * @param script - 脚本信息
+ * @returns 更新后的脚本数组
+ */
 export async function updateScript(script: Script): Promise<Script[]> {
   const scripts = await getScripts();
   const metadataParser = new MetadataParser();
@@ -113,6 +143,7 @@ export async function updateScript(script: Script): Promise<Script[]> {
   let updatedSource = script.source;
   let updatedDirty = script.dirty;
   
+  // 如果原来是远程脚本，现在修改了，标记为已修改
   if (existingScript && existingScript.source === ScriptSource.REMOTE) {
     updatedSource = ScriptSource.MODIFIED;
     updatedDirty = true;
@@ -137,6 +168,11 @@ export async function updateScript(script: Script): Promise<Script[]> {
   return updatedScripts;
 }
 
+/**
+ * 删除脚本
+ * @param scriptId - 脚本 ID
+ * @returns 更新后的脚本数组
+ */
 export async function deleteScript(scriptId: string): Promise<Script[]> {
   const scripts = await getScripts();
   const updatedScripts = scripts.filter(s => s.id !== scriptId);
@@ -144,6 +180,12 @@ export async function deleteScript(scriptId: string): Promise<Script[]> {
   return updatedScripts;
 }
 
+/**
+ * 从文件解析脚本
+ * @param content - 脚本内容
+ * @param file - 文件信息
+ * @returns 脚本对象
+ */
 export async function parseScriptFromFile(content: string, file: any): Promise<Script> {
   const metadataParser = new MetadataParser();
   const metadata = metadataParser.parse(content);
@@ -165,10 +207,14 @@ export async function parseScriptFromFile(content: string, file: any): Promise<S
   };
 }
 
+/**
+ * 数据迁移（如果需要）
+ */
 export async function migrateScriptsIfNeeded(): Promise<void> {
   const result = await chrome.storage.local.get([STORAGE_KEY_SCRIPTS, 'dataVersion']);
   const currentVersion = (result.dataVersion as number) || 0;
   
+  // 已经是最新版本
   if (currentVersion >= 1) {
     return;
   }
@@ -177,6 +223,7 @@ export async function migrateScriptsIfNeeded(): Promise<void> {
   
   const migratedScripts: Script[] = oldScripts.map(oldScript => {
     let id = oldScript.id;
+    // 确保 ID 是 UUID
     if (!isValidUUID(id)) {
       id = generateUUID();
     }
@@ -201,6 +248,13 @@ export async function migrateScriptsIfNeeded(): Promise<void> {
   console.log(`[RepoMonkey] Migrated ${migratedScripts.length} scripts to data version 1`);
 }
 
+/**
+ * 拉取远程脚本更新
+ * @param scriptId - 脚本 ID
+ * @param remoteContent - 远程内容
+ * @param remoteSha - 远程 SHA
+ * @returns 更新后的脚本数组
+ */
 export async function pullScript(scriptId: string, remoteContent: string, remoteSha: string): Promise<Script[]> {
   const scripts = await getScripts();
   const metadataParser = new MetadataParser();

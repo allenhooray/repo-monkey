@@ -4,6 +4,9 @@ import { fetchFilesFromRepo, fetchFileContent } from './github-service';
 import type { Script } from '../../runtime';
 import { ScriptSource } from '../../shared/constants';
 
+/**
+ * 同步脚本
+ */
 export async function syncScripts(): Promise<void> {
   const settings = await getSettings();
   if (!settings.accessToken || !settings.repoOwner || !settings.repoName) {
@@ -15,6 +18,7 @@ export async function syncScripts(): Promise<void> {
     const files = await fetchFilesFromRepo(settings);
     const remoteScripts: Script[] = [];
 
+    // 遍历文件，解析脚本
     for (const file of files) {
       if (file.name.endsWith('.js') && file.type === 'file') {
         const content = await fetchFileContent(file.download_url);
