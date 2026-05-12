@@ -2,16 +2,18 @@
 import { ref, computed, watch } from 'vue';
 import { currentLocale, t as translate } from '../shared/i18n';
 import { useSyncedSettings } from '../shared/composables/useSyncedState';
+import { Status } from '../shared';
 import TabGeneral from './components/TabGeneral.vue';
 import TabRepository from './components/TabRepository.vue';
 import TabScripts from './components/TabScripts.vue';
 
 type TabKey = 'general' | 'repository' | 'scripts';
+type StatusType = '' | 'success' | 'error' | 'loading';
 
 const { settings } = useSyncedSettings();
 const loading = ref(true);
 const activeTab = ref<TabKey>('general');
-const statusType = ref<string>('');
+const statusType = ref<StatusType>('');
 const statusMessage = ref<string>('');
 
 const navItems = computed<{ key: TabKey; label: string }[]>(() => [
@@ -26,7 +28,7 @@ function t(key: string): string {
 }
 
 function setStatus(type: string, message: string): void {
-  statusType.value = type;
+  statusType.value = type as StatusType;
   statusMessage.value = message;
 }
 
@@ -84,9 +86,9 @@ watch(activeTab, () => {
         />
       </template>
 
-      <div v-if="statusMessage" :class="['status-line', statusType]">
+      <Status v-if="statusMessage" :type="statusType">
         {{ statusMessage }}
-      </div>
+      </Status>
     </main>
   </div>
 </template>
@@ -168,31 +170,6 @@ watch(activeTab, () => {
 .loading {
   text-align: center;
   padding: 48px;
-  color: #666;
-}
-
-.status-line {
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-top: 16px;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
-.status-line.success {
-  background: rgba(46, 204, 113, 0.2);
-  color: #2ecc71;
-  border: 1px solid rgba(46, 204, 113, 0.3);
-}
-
-.status-line.error {
-  background: rgba(231, 76, 60, 0.2);
-  color: #e74c3c;
-  border: 1px solid rgba(231, 76, 60, 0.3);
-}
-
-.status-line.loading {
-  text-align: center;
   color: #666;
 }
 </style>

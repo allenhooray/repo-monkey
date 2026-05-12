@@ -4,6 +4,7 @@ import { currentLocale, t as translate } from '../../shared/i18n';
 import { ScriptSource } from '../../shared/constants';
 import { diffLines } from 'diff';
 import { useSyncedSettings, useSyncedScripts } from '../../shared/composables/useSyncedState';
+import { Button, Input } from '../../shared';
 import ScriptTree from '../../shared/components/ScriptTree.vue';
 import ScriptEditor from './ScriptEditor.vue';
 import DialogCommitMessage from './DialogCommitMessage.vue';
@@ -513,26 +514,25 @@ function handleFullscreen() {
       <div class="script-list-panel">
         <div class="script-list-header">
           <div class="search-box">
-            <input
+            <Input
               type="text"
               :placeholder="t('searchScripts')"
               v-model="searchQuery"
-              class="search-input"
             />
           </div>
           <div class="btn-group">
-            <button
+            <Button
               v-if="hasDirtyScripts"
-              class="btn btn-primary"
+              variant="primary"
               :disabled="isBatchPushing"
               @click="handleBatchPush"
             >
               {{ t('pushAllChanges') }}
               <span class="dirty-count-badge">{{ dirtyScriptsCount }}</span>
-            </button>
-            <button class="btn btn-primary btn-new-script" @click="handleNewScript">
+            </Button>
+            <Button variant="primary" class="btn-new-script" @click="handleNewScript">
               {{ t('newScript') }}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -683,50 +683,10 @@ function handleFullscreen() {
   width: 100%;
 }
 
-.search-input {
-  width: 100%;
-  padding: 10px 14px;
-  background: #2d2d2d;
-  border: 1px solid #404040;
-  border-radius: 8px;
-  color: #e0e0e0;
-  font-size: 14px;
-  transition: border-color 0.2s;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #2ecc71;
-}
-
 .btn-group {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-}
-
-.btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background: #2ecc71;
-  color: #000;
-}
-
-.btn-primary:hover {
-  background: #27ae60;
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .btn-new-script {

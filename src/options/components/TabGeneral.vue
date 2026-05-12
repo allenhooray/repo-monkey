@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { availableLocales, currentLocale, setLocale } from '../../shared/i18n';
+import { ref, computed, watch } from 'vue';
+import { availableLocales, currentLocale, setLocale, t as translate } from '../../shared/i18n';
 import { useSyncedSettings } from '../../shared/composables/useSyncedState';
+import { Select } from '../../shared';
 
 const { settings } = useSyncedSettings();
 
@@ -9,11 +11,16 @@ function t(key: string): string {
   return translate(key);
 }
 
-// Fix: Need to import translate here
-import { t as translate } from '../../shared/i18n';
+const languageOptions = computed(() => {
+  return availableLocales.map(locale => ({
+    value: locale.value,
+    label: t(locale.labelKey)
+  }));
+});
 
-async function handleLanguageChange(event: Event) {
-  const value = (event.target as HTMLSelectElement).value as any;
+const selectedLocale = ref(currentLocale.value);
+
+watch(selectedLocale, async (value) => {
   setLocale(value);
   
   // Update settings
@@ -23,7 +30,7 @@ async function handleLanguageChange(event: Event) {
       settings: { ...settings.value, language: value }
     });
   }
-}
+});
 </script>
 
 <template>
@@ -32,20 +39,11 @@ async function handleLanguageChange(event: Event) {
     <div class="card">
       <div class="form-group">
         <label for="languageSelect">{{ t('language') }}</label>
-        <select
+        <Select
           id="languageSelect"
-          class="select"
-          :value="currentLocale"
-          @change="handleLanguageChange"
-        >
-          <option
-            v-for="locale in availableLocales"
-            :key="locale.value"
-            :value="locale.value"
-          >
-            {{ t(locale.labelKey) }}
-          </option>
-        </select>
+          :options="languageOptions"
+          v-model="selectedLocale"
+        />
         <small class="hint">{{ t('languageDesc') }}</small>
       </div>
     </div>
@@ -84,23 +82,6 @@ async function handleLanguageChange(event: Event) {
   font-size: 14px;
   color: #aaa;
   margin-bottom: 8px;
-}
-
-.select {
-  width: 100%;
-  padding: 12px 16px;
-  background: #2d2d2d;
-  border: 1px solid #404040;
-  border-radius: 8px;
-  color: #e0e0e0;
-  font-size: 14px;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.select:focus {
-  outline: none;
-  border-color: #2ecc71;
 }
 
 .hint {

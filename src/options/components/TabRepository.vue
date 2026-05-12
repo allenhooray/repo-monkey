@@ -3,6 +3,7 @@ import { ref, watch, computed } from 'vue';
 import { currentLocale, t as translate } from '../../shared/i18n';
 import { parseRepoInput } from '../../shared/utils/repo-parser';
 import { useSyncedSettings } from '../../shared/composables/useSyncedState';
+import { Button, Input, Select, Dialog } from '../../shared';
 
 const props = defineProps<{
   onStatus: (type: string, message: string) => void;
@@ -250,7 +251,7 @@ watch(isBound, async (newVal) => {
       <h3 class="card-title">{{ t('bindGitHubRepo') }}</h3>
       <div class="form-group">
         <label for="accessToken">{{ t('personalAccessToken') }}</label>
-        <input
+        <Input
           id="accessToken"
           v-model="accessToken"
           type="password"
@@ -269,7 +270,7 @@ watch(isBound, async (newVal) => {
       </div>
       <div class="form-group">
         <label for="repoInput">{{ t('repository') }}</label>
-        <input
+        <Input
           id="repoInput"
           v-model="repoInput"
           type="text"
@@ -283,16 +284,16 @@ watch(isBound, async (newVal) => {
         </small>
       </div>
       <div class="btn-group">
-        <button class="btn btn-primary" @click="handleSave">
+        <Button variant="primary" @click="handleSave">
           {{ t('saveSync') }}
-        </button>
-        <button
+        </Button>
+        <Button
           v-if="isBound && editing"
-          class="btn btn-secondary"
+          variant="secondary"
           @click="handleCancelEdit"
         >
           {{ t('cancel') }}
-        </button>
+        </Button>
       </div>
     </div>
 
@@ -316,92 +317,75 @@ watch(isBound, async (newVal) => {
       <div class="form-group" style="margin-top: 20px;">
         <label>{{ t('branch') }}</label>
         <div class="branch-selector">
-          <select
+          <Select
             v-if="branches.length > 0"
-            class="select"
+            :options="branches.map(b => ({ value: b.name, label: b.name }))"
             :value="settings?.branch || ''"
-            @change="handleSelectBranch(($event.target as HTMLSelectElement).value)"
+            @change="(value) => handleSelectBranch(value as string)"
             :disabled="loadingBranches"
-          >
-            <option
-              v-for="branch in branches"
-              :key="branch.name"
-              :value="branch.name"
-            >
-              {{ branch.name }}
-            </option>
-          </select>
-          <button
+          />
+          <Button
             v-else
-            class="btn btn-secondary"
+            variant="secondary"
             @click="fetchBranches"
             :disabled="loadingBranches"
           >
             {{ loadingBranches ? t('loadingBranches') : t('loadBranches') }}
-          </button>
-          <button
-            class="btn btn-primary"
+          </Button>
+          <Button
+            variant="primary"
             @click="handleOpenCreateBranchDialog"
             :disabled="loadingBranches || isCreatingBranch"
           >
             {{ t('newBranch') }}
-          </button>
+          </Button>
         </div>
       </div>
       
       <div class="btn-group">
-        <button class="btn btn-primary" @click="handleSync">
+        <Button variant="primary" @click="handleSync">
           {{ t('syncNow') }}
-        </button>
-        <button class="btn btn-secondary" @click="handleEdit">
+        </Button>
+        <Button variant="secondary" @click="handleEdit">
           {{ t('editSettings') }}
-        </button>
-        <button class="btn btn-danger" @click="handleUnbind">
+        </Button>
+        <Button variant="danger" @click="handleUnbind">
           {{ t('unbind') }}
-        </button>
+        </Button>
       </div>
     </div>
 
     <!-- Create Branch Dialog -->
-    <div v-if="showCreateBranchDialog" class="dialog-overlay">
-      <div class="dialog">
-        <h3 class="dialog-title">{{ t('createNewBranch') }}</h3>
-        <div class="form-group">
-          <label>{{ t('branchName') }}</label>
-          <input
-            v-model="newBranchName"
-            type="text"
-            class="input"
-            :placeholder="t('branchNamePlaceholder')"
-            @keyup.enter="handleCreateBranch"
-            autofocus
-          />
-        </div>
-        <div class="form-group" v-if="branches.length > 0">
-          <label>{{ t('sourceBranch') }}</label>
-          <select
-            class="select"
-            v-model="selectedSourceBranch"
-          >
-            <option
-              v-for="branch in branches"
-              :key="branch.name"
-              :value="branch.name"
-            >
-              {{ branch.name }}
-            </option>
-          </select>
-        </div>
-        <div class="dialog-actions">
-          <button class="btn btn-secondary" @click="showCreateBranchDialog = false">
-            {{ t('cancel') }}
-          </button>
-          <button class="btn btn-primary" @click="handleCreateBranch" :disabled="isCreatingBranch">
-            {{ isCreatingBranch ? t('loadingBranches') : t('create') }}
-          </button>
-        </div>
+    <Dialog
+      v-model="showCreateBranchDialog"
+      :title="t('createNewBranch')"
+    >
+      <div class="form-group">
+        <label>{{ t('branchName') }}</label>
+        <Input
+          v-model="newBranchName"
+          type="text"
+          :placeholder="t('branchNamePlaceholder')"
+          @keyup.enter="handleCreateBranch"
+          autofocus
+        />
       </div>
-    </div>
+      <div class="form-group" v-if="branches.length > 0">
+        <label>{{ t('sourceBranch') }}</label>
+        <Select
+          :options="branches.map(b => ({ value: b.name, label: b.name }))"
+          v-model="selectedSourceBranch"
+        />
+      </div>
+      <template #footer>
+        <Button variant="secondary" @click="showCreateBranchDialog = false">
+          {{ t('cancel') }}
+        </Button>
+        <Button variant="primary" @click="handleCreateBranch" :disabled="isCreatingBranch">
+          {{ isCreatingBranch ? t('loadingBranches') : t('create') }}
+        </Button>
+      </template>
+    </Dialog>
   </section>
 </template>
 
@@ -443,76 +427,6 @@ watch(isBound, async (newVal) => {
   font-size: 14px;
   color: #aaa;
   margin-bottom: 8px;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 12px 16px;
-  background: #2d2d2d;
-  border: 1px solid #404040;
-  border-radius: 8px;
-  color: #e0e0e0;
-  font-size: 14px;
-  transition: border-color 0.2s;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #2ecc71;
-}
-
-.select {
-  width: 100%;
-  padding: 12px 16px;
-  background: #2d2d2d;
-  border: 1px solid #404040;
-  border-radius: 8px;
-  color: #e0e0e0;
-  font-size: 14px;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.select:focus {
-  outline: none;
-  border-color: #2ecc71;
-}
-
-.btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background: #2ecc71;
-  color: #000;
-}
-
-.btn-primary:hover {
-  background: #27ae60;
-}
-
-.btn-danger {
-  background: #e74c3c;
-  color: #fff;
-}
-
-.btn-danger:hover {
-  background: #c0392b;
-}
-
-.btn-secondary {
-  background: #404040;
-  color: #e0e0e0;
-}
-
-.btn-secondary:hover {
-  background: #505050;
 }
 
 .btn-group {
@@ -568,58 +482,5 @@ watch(isBound, async (newVal) => {
   display: flex;
   gap: 10px;
   align-items: center;
-}
-
-.dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-}
-
-.dialog {
-  background: #1e1e1e;
-  border: 1px solid #333;
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 600px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.dialog-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: #f0f0f0;
-}
-
-.dialog-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-.input {
-  width: 100%;
-  padding: 12px 16px;
-  background: #2d2d2d;
-  border: 1px solid #404040;
-  border-radius: 8px;
-  color: #e0e0e0;
-  font-size: 14px;
-  transition: border-color 0.2s;
-}
-
-.input:focus {
-  outline: none;
-  border-color: #2ecc71;
 }
 </style>

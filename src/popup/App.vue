@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import type { Script } from '../runtime';
 import { currentLocale, setLocale, t as translate } from '../shared/i18n';
+import { Button } from '../shared';
 import ScriptTree from '../shared/components/ScriptTree.vue';
 import { useSyncedSettings, useSyncedScripts } from '../shared/composables/useSyncedState';
 
@@ -103,28 +104,28 @@ onMounted(() => {
       <div v-else-if="!userScriptsAllowed" class="permission-notice">
         <div class="permission-title">{{ t('userScriptsPermissionTitle') }}</div>
         <p class="permission-desc">{{ t('userScriptsPermissionDesc') }}</p>
-        <button class="btn btn-primary" @click="openExtensionDetails">
+        <Button variant="primary" @click="openExtensionDetails">
           {{ t('openExtensionDetails') }}
-        </button>
+        </Button>
       </div>
 
       <div v-else-if="!hasRepo" class="no-repo">
         <p>{{ t('noRepoBound') }}</p>
-        <button class="btn btn-primary" @click="openOptions">
+        <Button variant="primary" @click="openOptions">
           {{ t('bindRepo') }}
-        </button>
+        </Button>
       </div>
 
       <template v-else>
         <div class="sync-bar">
           <div class="sync-info">{{ t('lastSync') }} {{ lastSyncText }}</div>
-          <button
-            class="btn btn-secondary"
+          <Button
+            variant="secondary"
             :disabled="syncing"
             @click="handleSync"
           >
             {{ t('syncNow') }}
-          </button>
+          </Button>
         </div>
 
         <div v-if="syncing" class="loading">{{ t('syncing') }}</div>
