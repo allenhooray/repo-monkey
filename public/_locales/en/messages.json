@@ -358,5 +358,57 @@
   "create": {
     "message": "Create",
     "description": "Create button text"
+  },
+  "branch": {
+    "message": "Branch",
+    "description": "Label for branch selector"
+  },
+  "loadBranches": {
+    "message": "Load Branches",
+    "description": "Button text to load branches"
+  },
+  "loadingBranches": {
+    "message": "Loading...",
+    "description": "Loading message for branches"
+  },
+  "newBranch": {
+    "message": "New Branch",
+    "description": "Button text to create new branch"
+  },
+  "createNewBranch": {
+    "message": "Create New Branch",
+    "description": "Title for create branch dialog"
+  },
+  "branchName": {
+    "message": "Branch Name",
+    "description": "Label for branch name input"
+  },
+  "sourceBranch": {
+    "message": "Source Branch",
+    "description": "Label for source branch selector"
+  },
+  "branchNameRequired": {
+    "message": "Branch name is required",
+    "description": "Error message when branch name is empty"
+  },
+  "branchNamePlaceholder": {
+    "message": "my-new-branch",
+    "description": "Placeholder for branch name input"
+  },
+  "branchCreated": {
+    "message": "Branch {branchName} created successfully",
+    "description": "Success message for branch creation"
+  },
+  "branchSwitch": {
+    "message": "Switched to branch: {branchName}",
+    "description": "Success message for branch switch"
+  },
+  "currentBranch": {
+    "message": "Current branch:",
+    "description": "Label for current branch display"
+  },
+  "failedToFetchBranches": {
+    "message": "Failed to fetch branches",
+    "description": "Error message for branch fetch failure"
   }
 }

@@ -9,6 +9,7 @@ export interface Settings {
   repoName: string;
   lastSync: string | null;
   language?: Locale;
+  branch?: string;
 }
 
 export interface GitHubFile {
@@ -43,7 +44,8 @@ export type MessageAction =
   | 'batchPush'
   | 'pullScript'
   | 'getRemoteContent'
-  | 'getBranches';
+  | 'getBranches'
+  | 'createBranch';
 
 export interface MessageRequest {
   action: MessageAction;
@@ -54,6 +56,7 @@ export interface MessageRequest {
   commitMessage?: string;
   forceOverwrite?: boolean;
   branch?: string;
+  sourceBranch?: string;
 }
 
 export interface BatchPushResult {

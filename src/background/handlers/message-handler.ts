@@ -3,7 +3,7 @@ import { getScripts, toggleScript, createScript, updateScript, deleteScript, pul
 import { getSettings, saveSettings, unbindRepo } from '../services/storage-service';
 import { syncRegistrations, clearRegistrations } from '../services/execution-service';
 import { handleGMBridgeRequest } from '../services/gm-bridge-service';
-import { pushScriptToRepo, deleteFileFromRepo, fetchRemoteContent, fetchBranches } from '../services/github-service';
+import { pushScriptToRepo, deleteFileFromRepo, fetchRemoteContent, fetchBranches, createBranch as createBranchService } from '../services/github-service';
 import type { MessageRequest, MessageResponse, BatchPushResult } from '../../shared/types';
 import { ScriptSource, STORAGE_KEY_SCRIPTS } from '../../shared/constants';
 import type { Script } from '../../runtime';
@@ -460,6 +460,29 @@ export function setupMessageHandler(): void {
               sendResponse({
                 success: false,
                 error: error instanceof Error ? error.message : 'Failed to fetch branches',
+              });
+            }
+          })();
+          handled = true;
+          break;
+
+        case 'createBranch':
+          (async () => {
+            try {
+              const settings = await getSettings();
+              if (!request.branch) {
+                sendResponse({
+                  success: false,
+                  error: 'Branch name is required',
+                });
+                return;
+              }
+              const result = await createBranchService(settings, request.branch, request.sourceBranch);
+              sendResponse(result);
+            } catch (error) {
+              sendResponse({
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to create branch',
               });
             }
           })();

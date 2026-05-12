@@ -51,7 +51,10 @@ export async function pushScriptToRepo(
   };
 
   const remotePath = script.remotePath || script.fileName;
-  const apiUrl = `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/contents/${encodeURIComponent(remotePath)}`;
+  let apiUrl = `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/contents/${encodeURIComponent(remotePath)}`;
+  if (settings.branch) {
+    apiUrl += `?ref=${encodeURIComponent(settings.branch)}`;
+  }
 
   try {
     let currentSha: string | undefined;
@@ -88,7 +91,14 @@ export async function pushScriptToRepo(
       }
     }
 
-    const response = await fetch(apiUrl, {
+    // 如果指定了分支，添加到请求体
+    if (settings.branch) {
+      body.branch = settings.branch;
+    }
+
+    // PUT 请求不需要 ref 查询参数，通过 body 中的 branch 字段设置
+    const putApiUrl = `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/contents/${encodeURIComponent(remotePath)}`;
+    const response = await fetch(putApiUrl, {
       method: 'PUT',
       headers,
       body: JSON.stringify(body),
@@ -154,10 +164,11 @@ async function fetchDirectoryContents(
   path: string,
   headers: Record<string, string>
 ): Promise<GitHubFile[]> {
-  const response = await fetch(
-    `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/contents/${path}`,
-    { headers }
-  );
+  let url = `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/contents/${path}`;
+  if (settings.branch) {
+    url += `?ref=${encodeURIComponent(settings.branch)}`;
+  }
+  const response = await fetch(url, { headers });
 
   if (!response.ok) {
     throw new Error(`Failed to fetch ${path}`);
@@ -240,10 +251,15 @@ export async function deleteFileFromRepo(
   const apiUrl = `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/contents/${encodeURIComponent(remotePath)}`;
 
   try {
-    const body = {
+    const body: any = {
       message: commitMessage,
       sha,
     };
+
+    // 如果指定了分支，添加到请求体
+    if (settings.branch) {
+      body.branch = settings.branch;
+    }
 
     const response = await fetch(apiUrl, {
       method: 'DELETE',
@@ -312,7 +328,10 @@ export async function fetchRemoteContent(
     Accept: 'application/vnd.github.v3+json',
   };
 
-  const apiUrl = `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/contents/${encodeURIComponent(remotePath)}`;
+  let apiUrl = `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/contents/${encodeURIComponent(remotePath)}`;
+  if (settings.branch) {
+    apiUrl += `?ref=${encodeURIComponent(settings.branch)}`;
+  }
 
   try {
     const response = await fetch(apiUrl, { headers });
@@ -376,6 +395,12 @@ export interface BranchesResult {
   error?: PushError;
 }
 
+export interface CreateBranchResult {
+  success: boolean;
+  branchName?: string;
+  error?: PushError;
+}
+
 /**
  * 获取仓库分支列表
  */
@@ -421,7 +446,7 @@ export async function fetchBranches(settings: Settings): Promise<BranchesResult>
 
     // Fetch branches
     const branchesResponse = await fetch(
-      `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/branches?per_page=10`,
+      `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/branches?per_page=100`,
       { headers }
     );
 
@@ -441,6 +466,118 @@ export async function fetchBranches(settings: Settings): Promise<BranchesResult>
       success: true,
       branches,
       defaultBranch,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: 'NETWORK_ERROR',
+        message: error instanceof Error ? error.message : 'Network error',
+      },
+    };
+  }
+}
+
+/**
+ * 创建新分支
+ */
+export async function createBranch(
+  settings: Settings,
+  newBranchName: string,
+  sourceBranch?: string
+): Promise<CreateBranchResult> {
+  const headers = {
+    Authorization: `Bearer ${settings.accessToken}`,
+    Accept: 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json',
+  };
+
+  try {
+    // 先获取源分支的 SHA
+    const branchToUse = sourceBranch || settings.branch;
+    let refUrl = `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/git/ref/heads/${encodeURIComponent(branchToUse || '')}`;
+    
+    // 如果没有指定源分支，获取默认分支
+    if (!branchToUse) {
+      const repoResponse = await fetch(
+        `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}`,
+        { headers }
+      );
+      if (!repoResponse.ok) {
+        let errorCode: PushErrorCode = 'NETWORK_ERROR';
+        let errorMessage = `GitHub API error: ${repoResponse.status}`;
+        return {
+          success: false,
+          error: {
+            code: errorCode,
+            message: errorMessage,
+          },
+        };
+      }
+      const repoData = await repoResponse.json();
+      refUrl = `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/git/ref/heads/${encodeURIComponent(repoData.default_branch)}`;
+    }
+
+    const refResponse = await fetch(refUrl, { headers });
+    if (!refResponse.ok) {
+      let errorCode: PushErrorCode = 'NETWORK_ERROR';
+      let errorMessage = `Failed to get source branch: ${refResponse.status}`;
+      return {
+        success: false,
+        error: {
+          code: errorCode,
+          message: errorMessage,
+        },
+      };
+    }
+
+    const refData = await refResponse.json();
+    const sourceSha = refData.object.sha;
+
+    // 创建新分支
+    const createResponse = await fetch(
+      `https://api.github.com/repos/${settings.repoOwner}/${settings.repoName}/git/refs`,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          ref: `refs/heads/${newBranchName}`,
+          sha: sourceSha,
+        }),
+      }
+    );
+
+    if (!createResponse.ok) {
+      let errorCode: PushErrorCode = 'NETWORK_ERROR';
+      let errorMessage = `Failed to create branch: ${createResponse.status}`;
+      
+      switch (createResponse.status) {
+        case 401:
+          errorCode = 'TOKEN_INVALID';
+          errorMessage = 'Invalid or expired access token';
+          break;
+        case 403:
+          errorCode = 'PERMISSION_DENIED';
+          errorMessage = 'Insufficient permissions';
+          break;
+        case 422:
+          errorCode = 'PATH_INVALID';
+          errorMessage = 'Branch already exists';
+          break;
+      }
+      
+      return {
+        success: false,
+        error: {
+          code: errorCode,
+          message: errorMessage,
+        },
+      };
+    }
+
+    return {
+      success: true,
+      branchName: newBranchName,
     };
   } catch (error) {
     return {

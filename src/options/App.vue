@@ -51,9 +51,16 @@ const showNewScriptDialog = ref(false);
 const newScriptFileName = ref('');
 const showBatchPushProgress = ref(false);
 const batchPushResult = ref<BatchPushResult | null>(null);
-const showBatchPushResult = ref(false);
 
 const isBatchPushing = ref(false);
+
+// 分支相关状态
+const branches = ref<Array<{ name: string; protected: boolean }>>([]);
+const showCreateBranchDialog = ref(false);
+const newBranchName = ref('');
+const selectedSourceBranch = ref('');
+const loadingBranches = ref(false);
+const isCreatingBranch = ref(false);
 
 const isBound = computed(
   () =>
@@ -817,6 +824,83 @@ async function handlePullFromGitHub(): Promise<void> {
 function handleUpdateExpandedDirs(newDirs: Set<string>): void {
   expandedDirs.value = newDirs;
 }
+
+// 分支相关函数
+async function fetchBranches(): Promise<void> {
+  if (!isBound.value) return;
+  
+  loadingBranches.value = true;
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'getBranches' });
+    if (response.success && response.branches) {
+      branches.value = response.branches;
+      // 如果当前没有设置分支，使用默认分支
+      if (!settings.value?.branch && response.defaultBranch) {
+        await persistSettings({ branch: response.defaultBranch });
+      }
+    } else {
+      setStatus('error', response.error || t('failedToFetchBranches'));
+    }
+  } catch (error) {
+    setStatus('error', `${t('error')} ${(error as Error).message}`);
+  } finally {
+    loadingBranches.value = false;
+  }
+}
+
+async function handleSelectBranch(branchName: string): Promise<void> {
+  await persistSettings({ branch: branchName });
+  setStatus('success', t('branchSwitch').replace('{branchName}', branchName));
+  setTimeout(clearStatus, 2000);
+}
+
+function handleOpenCreateBranchDialog(): void {
+  newBranchName.value = '';
+  selectedSourceBranch.value = settings.value?.branch || '';
+  showCreateBranchDialog.value = true;
+}
+
+async function handleCreateBranch(): Promise<void> {
+  const branchName = newBranchName.value.trim();
+  if (!branchName) {
+    setStatus('error', t('branchNameRequired'));
+    return;
+  }
+
+  if (isCreatingBranch.value) return;
+  isCreatingBranch.value = true;
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'createBranch',
+      branch: branchName,
+      sourceBranch: selectedSourceBranch.value,
+    });
+
+    if (response.success) {
+      showCreateBranchDialog.value = false;
+      // 先切换到新分支
+      await handleSelectBranch(branchName);
+      // 再重新获取分支列表
+      await fetchBranches();
+      // 显示成功消息
+      setStatus('success', t('branchCreated').replace('{branchName}', branchName));
+    } else {
+      setStatus('error', response.error || t('failedToFetchBranches'));
+    }
+  } catch (error) {
+    setStatus('error', `${t('error')} ${(error as Error).message}`);
+  } finally {
+    isCreatingBranch.value = false;
+  }
+}
+
+// 监听仓库绑定状态，自动获取分支
+watch(isBound, async (newVal) => {
+  if (newVal) {
+    await fetchBranches();
+  }
+});
 </script>
 
 <template>
@@ -939,6 +1023,44 @@ function handleUpdateExpandedDirs(newDirs: Set<string>): void {
                 {{ t('viewOnGitHub') }}
               </a>
             </div>
+            
+            <!-- 分支选择区域 -->
+            <div class="form-group" style="margin-top: 20px;">
+              <label>{{ t('branch') }}</label>
+              <div class="branch-selector">
+                <select
+                  v-if="branches.length > 0"
+                  class="select"
+                  :value="settings?.branch || ''"
+                  @change="handleSelectBranch(($event.target as HTMLSelectElement).value)"
+                  :disabled="loadingBranches"
+                >
+                  <option
+                    v-for="branch in branches"
+                    :key="branch.name"
+                    :value="branch.name"
+                  >
+                    {{ branch.name }}
+                  </option>
+                </select>
+                <button
+                  v-else
+                  class="btn btn-secondary"
+                  @click="fetchBranches"
+                  :disabled="loadingBranches"
+                >
+                  {{ loadingBranches ? t('loadingBranches') : t('loadBranches') }}
+                </button>
+                <button
+                  class="btn btn-primary"
+                  @click="handleOpenCreateBranchDialog"
+                  :disabled="loadingBranches || isCreatingBranch"
+                >
+                  {{ t('newBranch') }}
+                </button>
+              </div>
+            </div>
+            
             <div class="btn-group">
               <button class="btn btn-primary" @click="handleSync">
                 {{ t('syncNow') }}
@@ -959,6 +1081,11 @@ function handleUpdateExpandedDirs(newDirs: Set<string>): void {
         <!-- Script management -->
         <section v-else-if="activeTab === 'scripts'" class="page scripts-page">
           <h2 class="page-title">{{ t('scriptManagement') }}</h2>
+          <!-- 显示当前分支 -->
+          <div v-if="settings?.branch" class="branch-info">
+            <span class="branch-label">{{ t('currentBranch') }}</span>
+            <span class="branch-name">{{ settings.branch }}</span>
+          </div>
           
           <div class="scripts-layout">
             <!-- Script list -->
@@ -1187,36 +1314,77 @@ function handleUpdateExpandedDirs(newDirs: Set<string>): void {
     </div>
 
     <!-- New Script Dialog -->
-    <div v-if="showNewScriptDialog" class="dialog-overlay">
-      <div class="dialog">
-        <h3 class="dialog-title">{{ t('newScript') }}</h3>
-        <div class="form-group">
-          <label>{{ t('fileName') }}</label>
-          <input
-            v-model="newScriptFileName"
-            type="text"
-            class="input"
-            placeholder="my-script.js"
-            @keyup.enter="confirmNewScript"
-            autofocus
-          />
-          <small class="hint">{{ t('fileNameInvalid') }}</small>
+        <div v-if="showNewScriptDialog" class="dialog-overlay">
+          <div class="dialog">
+            <h3 class="dialog-title">{{ t('newScript') }}</h3>
+            <div class="form-group">
+              <label>{{ t('fileName') }}</label>
+              <input
+                v-model="newScriptFileName"
+                type="text"
+                class="input"
+                placeholder="my-script.js"
+                @keyup.enter="confirmNewScript"
+                autofocus
+              />
+              <small class="hint">{{ t('fileNameInvalid') }}</small>
+            </div>
+            <div v-if="statusMessage" :class="['status-line', statusType]" style="margin-top: 0; margin-bottom: 16px;">
+              {{ statusMessage }}
+            </div>
+            <div class="dialog-actions">
+              <button class="btn btn-secondary" @click="showNewScriptDialog = false; clearStatus()">
+                {{ t('cancel') }}
+              </button>
+              <button class="btn btn-primary" @click="confirmNewScript">
+                {{ t('create') }}
+              </button>
+            </div>
+          </div>
         </div>
-        <div v-if="statusMessage" :class="['status-line', statusType]" style="margin-top: 0; margin-bottom: 16px;">
-          {{ statusMessage }}
-        </div>
-        <div class="dialog-actions">
-          <button class="btn btn-secondary" @click="showNewScriptDialog = false; clearStatus()">
-            {{ t('cancel') }}
-          </button>
-          <button class="btn btn-primary" @click="confirmNewScript">
-            {{ t('create') }}
-          </button>
+        
+        <!-- Create Branch Dialog -->
+        <div v-if="showCreateBranchDialog" class="dialog-overlay">
+          <div class="dialog">
+            <h3 class="dialog-title">{{ t('createNewBranch') }}</h3>
+            <div class="form-group">
+              <label>{{ t('branchName') }}</label>
+              <input
+                v-model="newBranchName"
+                type="text"
+                class="input"
+                :placeholder="t('branchNamePlaceholder')"
+                @keyup.enter="handleCreateBranch"
+                autofocus
+              />
+            </div>
+            <div class="form-group" v-if="branches.length > 0">
+              <label>{{ t('sourceBranch') }}</label>
+              <select
+                class="select"
+                v-model="selectedSourceBranch"
+              >
+                <option
+                  v-for="branch in branches"
+                  :key="branch.name"
+                  :value="branch.name"
+                >
+                  {{ branch.name }}
+                </option>
+              </select>
+            </div>
+            <div class="dialog-actions">
+              <button class="btn btn-secondary" @click="showCreateBranchDialog = false">
+                {{ t('cancel') }}
+              </button>
+              <button class="btn btn-primary" @click="handleCreateBranch" :disabled="isCreatingBranch">
+                {{ isCreatingBranch ? t('loadingBranches') : t('create') }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
-</template>
+    </template>
 
 <style scoped>
 .hint {
@@ -1224,6 +1392,34 @@ function handleUpdateExpandedDirs(newDirs: Set<string>): void {
   font-size: 12px;
   margin-top: 8px;
   display: block;
+}
+
+.branch-selector {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.branch-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: rgba(46, 204, 113, 0.1);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.branch-label {
+  color: #aaa;
+  font-size: 14px;
+}
+
+.branch-name {
+  color: #2ecc71;
+  font-weight: 600;
+  font-size: 16px;
 }
 
 .hint-link {

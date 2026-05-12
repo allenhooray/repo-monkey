@@ -358,5 +358,57 @@
   "create": {
     "message": "创建",
     "description": "创建按钮文字"
+  },
+  "branch": {
+    "message": "分支",
+    "description": "分支选择器标签"
+  },
+  "loadBranches": {
+    "message": "加载分支",
+    "description": "加载分支按钮文字"
+  },
+  "loadingBranches": {
+    "message": "加载中...",
+    "description": "分支加载时的提示"
+  },
+  "newBranch": {
+    "message": "新建分支",
+    "description": "新建分支按钮文字"
+  },
+  "createNewBranch": {
+    "message": "创建新分支",
+    "description": "创建分支对话框标题"
+  },
+  "branchName": {
+    "message": "分支名称",
+    "description": "分支名称输入框标签"
+  },
+  "sourceBranch": {
+    "message": "源分支",
+    "description": "源分支选择器标签"
+  },
+  "branchNameRequired": {
+    "message": "分支名称不能为空",
+    "description": "分支名称为空时的错误提示"
+  },
+  "branchNamePlaceholder": {
+    "message": "my-new-branch",
+    "description": "分支名称输入框占位符"
+  },
+  "branchCreated": {
+    "message": "分支 {branchName} 创建成功",
+    "description": "分支创建成功提示"
+  },
+  "branchSwitch": {
+    "message": "已切换到分支：{branchName}",
+    "description": "分支切换成功提示"
+  },
+  "currentBranch": {
+    "message": "当前分支：",
+    "description": "当前分支显示标签"
+  },
+  "failedToFetchBranches": {
+    "message": "加载分支失败",
+    "description": "分支加载失败提示"
   }
 }
