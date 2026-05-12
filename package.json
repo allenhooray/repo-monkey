@@ -1,5 +1,6 @@
 {
   "name": "repo-monkey",
+  "private": true,
   "version": "1.0.0",
   "description": "Chrome extension that manages userscripts via GitHub",
   "type": "module",
