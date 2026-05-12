@@ -7,7 +7,11 @@
   "packageManager": "pnpm@9.12.0",
   "scripts": {
     "dev": "pnpm --filter @repo-monkey/extension dev",
+    "dev:extension": "pnpm --filter @repo-monkey/extension dev",
+    "dev:web": "pnpm --filter @repo-monkey/web dev",
     "build": "pnpm --filter @repo-monkey/extension build",
+    "build:web": "pnpm --filter @repo-monkey/web build",
+    "build:all": "pnpm -r build",
     "build:zip": "pnpm --filter @repo-monkey/extension build:zip",
     "type-check": "pnpm --filter @repo-monkey/extension type-check"
   }
