@@ -151,7 +151,10 @@ async function fetchDirectoryContents(
   const items = await response.json();
   const allFiles: GitHubFile[] = [];
 
-  for (const item of items) {
+  // 处理 GitHub API 返回单个文件（对象）或目录列表（数组）的情况
+  const fileList = Array.isArray(items) ? items : [items];
+
+  for (const item of fileList) {
     allFiles.push(item);
     if (item.type === 'dir') {
       const subFiles = await fetchDirectoryContents(settings, item.path, headers);
