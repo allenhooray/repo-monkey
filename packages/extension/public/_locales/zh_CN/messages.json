@@ -1,0 +1,414 @@
+{
+  "extName": {
+    "message": "RepoMonkey",
+    "description": "扩展名称"
+  },
+  "extDescription": {
+    "message": "一个类似 Tampermonkey 的 Chrome 扩展，通过 GitHub 管理脚本",
+    "description": "扩展描述"
+  },
+  "bindGitHubRepo": {
+    "message": "绑定 GitHub 仓库",
+    "description": "绑定表单标题"
+  },
+  "personalAccessToken": {
+    "message": "个人访问令牌",
+    "description": "访问令牌输入框标签"
+  },
+  "accessTokenPlaceholder": {
+    "message": "ghp_xxxxxxxxxxxx",
+    "description": "访问令牌输入框占位符"
+  },
+  "createTokenDesc": {
+    "message": "在",
+    "description": "访问令牌描述的一部分"
+  },
+  "repoScope": {
+    "message": "repo",
+    "description": "令牌所需的权限范围"
+  },
+  "scopeAt": {
+    "message": "创建具有权限的令牌",
+    "description": "访问令牌描述的一部分"
+  },
+  "githubSettings": {
+    "message": "GitHub 设置",
+    "description": "GitHub 设置链接文字"
+  },
+  "repository": {
+    "message": "仓库",
+    "description": "仓库输入框标签"
+  },
+  "repoInputPlaceholder": {
+    "message": "owner/repo 或 https://github.com/owner/repo 或 git@github.com:owner/repo.git",
+    "description": "仓库输入框占位符"
+  },
+  "supportFormats": {
+    "message": "支持格式：",
+    "description": "支持格式标签"
+  },
+  "saveSync": {
+    "message": "保存并同步",
+    "description": "保存并同步按钮文字"
+  },
+  "pleaseFillAll": {
+    "message": "请填写所有字段",
+    "description": "空字段错误提示"
+  },
+  "invalidRepoFormat": {
+    "message": "无效的仓库格式。请使用 owner/repo、HTTPS 或 SSH URL",
+    "description": "无效仓库格式错误提示"
+  },
+  "savingSyncing": {
+    "message": "正在保存并同步...",
+    "description": "保存时的加载提示"
+  },
+  "successBound": {
+    "message": "仓库绑定成功！",
+    "description": "成功提示"
+  },
+  "error": {
+    "message": "错误：",
+    "description": "错误前缀"
+  },
+  "boundRepository": {
+    "message": "已绑定的仓库",
+    "description": "已绑定仓库视图标题"
+  },
+  "lastSync": {
+    "message": "上次同步：",
+    "description": "上次同步时间标签"
+  },
+  "never": {
+    "message": "从未",
+    "description": "从未同步的文字"
+  },
+  "viewOnGitHub": {
+    "message": "在 GitHub 上查看 →",
+    "description": "GitHub 查看链接文字"
+  },
+  "syncNow": {
+    "message": "立即同步",
+    "description": "立即同步按钮文字"
+  },
+  "editSettings": {
+    "message": "编辑设置",
+    "description": "编辑设置按钮文字"
+  },
+  "unbind": {
+    "message": "解绑",
+    "description": "解绑按钮文字"
+  },
+  "syncing": {
+    "message": "正在同步...",
+    "description": "同步时的加载提示"
+  },
+  "syncSuccess": {
+    "message": "同步成功！",
+    "description": "同步成功提示"
+  },
+  "syncFailed": {
+    "message": "同步失败：",
+    "description": "同步失败错误提示"
+  },
+  "confirmUnbind": {
+    "message": "确定要解绑此仓库吗？",
+    "description": "解绑确认提示"
+  },
+  "noRepoBound": {
+    "message": "尚未绑定仓库",
+    "description": "未绑定仓库时的提示"
+  },
+  "bindRepo": {
+    "message": "绑定仓库",
+    "description": "绑定仓库按钮文字"
+  },
+  "noScriptsFound": {
+    "message": "未找到脚本",
+    "description": "未找到脚本时的提示"
+  },
+  "settingsTitle": {
+    "message": "设置",
+    "description": "选项页顶部标题"
+  },
+  "generalSettings": {
+    "message": "通用设置",
+    "description": "通用设置导航项"
+  },
+  "repositorySettings": {
+    "message": "仓库设置",
+    "description": "仓库设置导航项"
+  },
+  "scriptManagement": {
+    "message": "脚本管理",
+    "description": "脚本管理导航项"
+  },
+  "language": {
+    "message": "语言",
+    "description": "语言选择标签"
+  },
+  "languageDesc": {
+    "message": "选择扩展界面的显示语言。",
+    "description": "语言选择说明"
+  },
+  "english": {
+    "message": "English",
+    "description": "英文选项"
+  },
+  "chineseSimplified": {
+    "message": "简体中文",
+    "description": "简体中文选项"
+  },
+  "comingSoon": {
+    "message": "敬请期待……",
+    "description": "空页面占位符"
+  },
+  "cancel": {
+    "message": "取消",
+    "description": "取消按钮"
+  },
+  "userScriptsPermissionTitle": {
+    "message": "请启用「允许用户脚本」",
+    "description": "用户脚本权限提示标题"
+  },
+  "userScriptsPermissionDesc": {
+    "message": "为了运行仓库中的脚本，请前往扩展详情页开启「允许用户脚本」开关。",
+    "description": "用户脚本权限提示描述"
+  },
+  "openExtensionDetails": {
+    "message": "打开扩展详情页",
+    "description": "打开扩展详情页链接文字"
+  },
+  "scriptSourceRemote": {
+    "message": "从 GitHub 同步",
+    "description": "脚本来源 - 远端"
+  },
+  "scriptSourceLocal": {
+    "message": "仅本地",
+    "description": "脚本来源 - 本地"
+  },
+  "scriptSourceModified": {
+    "message": "本地已修改",
+    "description": "脚本来源 - 已修改"
+  },
+  "scriptDirty": {
+    "message": "未同步的更改",
+    "description": "脚本脏状态"
+  },
+  "scriptOrphan": {
+    "message": "已从 GitHub 删除",
+    "description": "脚本孤立状态"
+  },
+  "scriptConflict": {
+    "message": "同步冲突",
+    "description": "脚本冲突状态"
+  },
+  "newScript": {
+    "message": "新建脚本",
+    "description": "新建脚本按钮"
+  },
+  "save": {
+    "message": "保存",
+    "description": "保存按钮"
+  },
+  "delete": {
+    "message": "删除",
+    "description": "删除按钮"
+  },
+  "fullscreen": {
+    "message": "全屏",
+    "description": "全屏按钮"
+  },
+  "exitFullscreen": {
+    "message": "退出全屏",
+    "description": "退出全屏按钮"
+  },
+  "fileName": {
+    "message": "文件名",
+    "description": "文件名输入框标签"
+  },
+  "confirmDeleteLocalScript": {
+    "message": "确定要删除此脚本吗？此操作不可恢复。",
+    "description": "删除本地脚本确认提示"
+  },
+  "confirmDeleteRemoteScript": {
+    "message": "确定要从本地移除此脚本吗？此操作不会影响 GitHub 仓库中的文件。",
+    "description": "删除远端脚本确认提示"
+  },
+  "fileNameRequired": {
+    "message": "请输入文件名",
+    "description": "文件名必填错误"
+  },
+  "fileNameInvalid": {
+    "message": "文件名无效。只能包含字母、数字、下划线、连字符和点，且必须以 .js 结尾",
+    "description": "文件名格式错误"
+  },
+  "fileNameDuplicate": {
+    "message": "文件名已存在",
+    "description": "文件名重复错误"
+  },
+  "saveSuccess": {
+    "message": "保存成功",
+    "description": "保存成功提示"
+  },
+  "deleteSuccess": {
+    "message": "删除成功",
+    "description": "删除成功提示"
+  },
+  "selectScriptToEdit": {
+    "message": "请从左侧选择一个脚本进行编辑",
+    "description": "提示用户选择脚本"
+  },
+  "labelRemote": {
+    "message": "远端",
+    "description": "远端标签"
+  },
+  "labelLocal": {
+    "message": "本地",
+    "description": "本地标签"
+  },
+  "labelModified": {
+    "message": "已修改",
+    "description": "已修改标签"
+  },
+  "enabled": {
+    "message": "已启用",
+    "description": "启用状态"
+  },
+  "disabled": {
+    "message": "已禁用",
+    "description": "禁用状态"
+  },
+  "searchScripts": {
+    "message": "搜索脚本...",
+    "description": "搜索框占位符"
+  },
+  "deleteLocal": {
+    "message": "仅本地删除",
+    "description": "仅本地删除脚本选项"
+  },
+  "deleteFromRepo": {
+    "message": "从仓库删除",
+    "description": "从仓库删除脚本选项"
+  },
+  "cleanupOrphan": {
+    "message": "清理孤立脚本",
+    "description": "清理孤立脚本按钮"
+  },
+  "confirmDeleteFromRepo": {
+    "message": "确定要从仓库删除此脚本吗？此操作将同时删除本地副本。",
+    "description": "从仓库删除脚本确认提示"
+  },
+  "confirmCleanupOrphan": {
+    "message": "确定要清理所有孤立脚本吗？这些脚本在仓库中已不存在。",
+    "description": "清理孤立脚本确认提示"
+  },
+  "pushAllChanges": {
+    "message": "推送所有变更",
+    "description": "批量推送按钮"
+  },
+  "dirtyScriptsCount": {
+    "message": "个待推送",
+    "description": "待推送脚本计数徽标"
+  },
+  "batchPushProgress": {
+    "message": "正在批量推送...",
+    "description": "批量推送进度提示"
+  },
+  "batchPushResult": {
+    "message": "推送完成：成功 {success}，失败 {failed}，冲突 {conflict}",
+    "description": "批量推送结果汇总"
+  },
+  "viewDiff": {
+    "message": "查看差异",
+    "description": "查看差异按钮"
+  },
+  "diffDialogTitle": {
+    "message": "内容差异对比",
+    "description": "差异对比对话框标题"
+  },
+  "remoteContent": {
+    "message": "远端内容",
+    "description": "差异对比对话框中远端内容标签"
+  },
+  "localContent": {
+    "message": "本地内容",
+    "description": "差异对比对话框中本地内容标签"
+  },
+  "continuePush": {
+    "message": "继续推送",
+    "description": "继续推送按钮"
+  },
+  "pullFromGitHub": {
+    "message": "从 GitHub 拉取",
+    "description": "拉取按钮"
+  },
+  "confirmPull": {
+    "message": "确定要从 GitHub 拉取并覆盖本地内容吗？此操作将丢弃本地修改。",
+    "description": "拉取确认提示"
+  },
+  "pullSuccess": {
+    "message": "拉取成功",
+    "description": "拉取成功提示"
+  },
+  "deleteSuccess": {
+    "message": "删除成功",
+    "description": "删除成功提示"
+  },
+  "create": {
+    "message": "创建",
+    "description": "创建按钮文字"
+  },
+  "branch": {
+    "message": "分支",
+    "description": "分支选择器标签"
+  },
+  "loadBranches": {
+    "message": "加载分支",
+    "description": "加载分支按钮文字"
+  },
+  "loadingBranches": {
+    "message": "加载中...",
+    "description": "分支加载时的提示"
+  },
+  "newBranch": {
+    "message": "新建分支",
+    "description": "新建分支按钮文字"
+  },
+  "createNewBranch": {
+    "message": "创建新分支",
+    "description": "创建分支对话框标题"
+  },
+  "branchName": {
+    "message": "分支名称",
+    "description": "分支名称输入框标签"
+  },
+  "sourceBranch": {
+    "message": "源分支",
+    "description": "源分支选择器标签"
+  },
+  "branchNameRequired": {
+    "message": "分支名称不能为空",
+    "description": "分支名称为空时的错误提示"
+  },
+  "branchNamePlaceholder": {
+    "message": "my-new-branch",
+    "description": "分支名称输入框占位符"
+  },
+  "branchCreated": {
+    "message": "分支 {branchName} 创建成功",
+    "description": "分支创建成功提示"
+  },
+  "branchSwitch": {
+    "message": "已切换到分支：{branchName}",
+    "description": "分支切换成功提示"
+  },
+  "currentBranch": {
+    "message": "当前分支：",
+    "description": "当前分支显示标签"
+  },
+  "failedToFetchBranches": {
+    "message": "加载分支失败",
+    "description": "分支加载失败提示"
+  }
+}

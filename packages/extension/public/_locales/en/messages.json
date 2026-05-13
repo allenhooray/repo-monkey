@@ -1,0 +1,414 @@
+{
+  "extName": {
+    "message": "RepoMonkey",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "A Tampermonkey-like Chrome extension that manages scripts via GitHub",
+    "description": "Extension description"
+  },
+  "bindGitHubRepo": {
+    "message": "Bind GitHub Repository",
+    "description": "Title for bind form"
+  },
+  "personalAccessToken": {
+    "message": "Personal Access Token",
+    "description": "Label for access token input"
+  },
+  "accessTokenPlaceholder": {
+    "message": "ghp_xxxxxxxxxxxx",
+    "description": "Placeholder for access token input"
+  },
+  "createTokenDesc": {
+    "message": "Create a token with",
+    "description": "Part of the access token description"
+  },
+  "repoScope": {
+    "message": "repo",
+    "description": "The scope required for the token"
+  },
+  "scopeAt": {
+    "message": "scope at",
+    "description": "Part of the access token description"
+  },
+  "githubSettings": {
+    "message": "GitHub Settings",
+    "description": "Link text to GitHub settings"
+  },
+  "repository": {
+    "message": "Repository",
+    "description": "Label for repository input"
+  },
+  "repoInputPlaceholder": {
+    "message": "owner/repo or https://github.com/owner/repo or git@github.com:owner/repo.git",
+    "description": "Placeholder for repository input"
+  },
+  "supportFormats": {
+    "message": "Support:",
+    "description": "Label for supported formats"
+  },
+  "saveSync": {
+    "message": "Save & Sync",
+    "description": "Button text for save and sync"
+  },
+  "pleaseFillAll": {
+    "message": "Please fill in all fields",
+    "description": "Error message for empty fields"
+  },
+  "invalidRepoFormat": {
+    "message": "Invalid repository format. Please use owner/repo, HTTPS, or SSH URL",
+    "description": "Error message for invalid repo format"
+  },
+  "savingSyncing": {
+    "message": "Saving and syncing...",
+    "description": "Loading message while saving"
+  },
+  "successBound": {
+    "message": "Successfully bound repository!",
+    "description": "Success message"
+  },
+  "error": {
+    "message": "Error:",
+    "description": "Error prefix"
+  },
+  "boundRepository": {
+    "message": "Bound Repository",
+    "description": "Title for bound repo view"
+  },
+  "lastSync": {
+    "message": "Last sync:",
+    "description": "Label for last sync time"
+  },
+  "never": {
+    "message": "Never",
+    "description": "Text for never synced"
+  },
+  "viewOnGitHub": {
+    "message": "View on GitHub →",
+    "description": "Link text to view on GitHub"
+  },
+  "syncNow": {
+    "message": "Sync Now",
+    "description": "Button text for sync now"
+  },
+  "editSettings": {
+    "message": "Edit Settings",
+    "description": "Button text for edit settings"
+  },
+  "unbind": {
+    "message": "Unbind",
+    "description": "Button text for unbind"
+  },
+  "syncing": {
+    "message": "Syncing...",
+    "description": "Loading message while syncing"
+  },
+  "syncSuccess": {
+    "message": "Sync successful!",
+    "description": "Success message for sync"
+  },
+  "syncFailed": {
+    "message": "Sync failed:",
+    "description": "Error message for failed sync"
+  },
+  "confirmUnbind": {
+    "message": "Are you sure you want to unbind this repository?",
+    "description": "Confirmation message for unbind"
+  },
+  "noRepoBound": {
+    "message": "No repository bound yet",
+    "description": "Message when no repo is bound"
+  },
+  "bindRepo": {
+    "message": "Bind Repository",
+    "description": "Button text to bind repo"
+  },
+  "noScriptsFound": {
+    "message": "No scripts found",
+    "description": "Message when no scripts are found"
+  },
+  "settingsTitle": {
+    "message": "Settings",
+    "description": "Top header on options page"
+  },
+  "generalSettings": {
+    "message": "General",
+    "description": "General settings nav item"
+  },
+  "repositorySettings": {
+    "message": "Repository",
+    "description": "Repository settings nav item"
+  },
+  "scriptManagement": {
+    "message": "Scripts",
+    "description": "Script management nav item"
+  },
+  "language": {
+    "message": "Language",
+    "description": "Label for language selector"
+  },
+  "languageDesc": {
+    "message": "Choose the display language for the extension UI.",
+    "description": "Description for language selector"
+  },
+  "english": {
+    "message": "English",
+    "description": "English option"
+  },
+  "chineseSimplified": {
+    "message": "简体中文",
+    "description": "Simplified Chinese option"
+  },
+  "comingSoon": {
+    "message": "Coming soon...",
+    "description": "Placeholder for empty pages"
+  },
+  "cancel": {
+    "message": "Cancel",
+    "description": "Cancel button"
+  },
+  "userScriptsPermissionTitle": {
+    "message": "Enable \"Allow User Scripts\"",
+    "description": "Title for user scripts permission notice"
+  },
+  "userScriptsPermissionDesc": {
+    "message": "To run scripts from your repository, please open the extension details page and turn on the \"Allow User Scripts\" toggle.",
+    "description": "Description for user scripts permission notice"
+  },
+  "openExtensionDetails": {
+    "message": "Open extension details",
+    "description": "Link text to open extension details page"
+  },
+  "scriptSourceRemote": {
+    "message": "Synced from GitHub",
+    "description": "Script source - remote"
+  },
+  "scriptSourceLocal": {
+    "message": "Local only",
+    "description": "Script source - local"
+  },
+  "scriptSourceModified": {
+    "message": "Locally modified",
+    "description": "Script source - modified"
+  },
+  "scriptDirty": {
+    "message": "Unsynced changes",
+    "description": "Script dirty status"
+  },
+  "scriptOrphan": {
+    "message": "Deleted from GitHub",
+    "description": "Script orphan status"
+  },
+  "scriptConflict": {
+    "message": "Sync conflict",
+    "description": "Script conflict status"
+  },
+  "newScript": {
+    "message": "New Script",
+    "description": "New script button"
+  },
+  "save": {
+    "message": "Save",
+    "description": "Save button"
+  },
+  "delete": {
+    "message": "Delete",
+    "description": "Delete button"
+  },
+  "fullscreen": {
+    "message": "Fullscreen",
+    "description": "Fullscreen button"
+  },
+  "exitFullscreen": {
+    "message": "Exit Fullscreen",
+    "description": "Exit fullscreen button"
+  },
+  "fileName": {
+    "message": "File Name",
+    "description": "File name input label"
+  },
+  "confirmDeleteLocalScript": {
+    "message": "Are you sure you want to delete this script? This action cannot be undone.",
+    "description": "Delete local script confirmation"
+  },
+  "confirmDeleteRemoteScript": {
+    "message": "Are you sure you want to remove this script from local? This will not affect the file in your GitHub repository.",
+    "description": "Delete remote script confirmation"
+  },
+  "fileNameRequired": {
+    "message": "Please enter a file name",
+    "description": "File name required error"
+  },
+  "fileNameInvalid": {
+    "message": "Invalid file name. It can only contain letters, numbers, underscores, hyphens, and dots, and must end with .js",
+    "description": "File name format error"
+  },
+  "fileNameDuplicate": {
+    "message": "File name already exists",
+    "description": "File name duplicate error"
+  },
+  "saveSuccess": {
+    "message": "Saved successfully",
+    "description": "Save success message"
+  },
+  "deleteSuccess": {
+    "message": "Deleted successfully",
+    "description": "Delete success message"
+  },
+  "selectScriptToEdit": {
+    "message": "Select a script from the left to edit",
+    "description": "Prompt to select script"
+  },
+  "labelRemote": {
+    "message": "Remote",
+    "description": "Remote label"
+  },
+  "labelLocal": {
+    "message": "Local",
+    "description": "Local label"
+  },
+  "labelModified": {
+    "message": "Modified",
+    "description": "Modified label"
+  },
+  "enabled": {
+    "message": "Enabled",
+    "description": "Enabled status"
+  },
+  "disabled": {
+    "message": "Disabled",
+    "description": "Disabled status"
+  },
+  "searchScripts": {
+    "message": "Search scripts...",
+    "description": "Search box placeholder"
+  },
+  "deleteLocal": {
+    "message": "Delete Local Only",
+    "description": "Option to delete script locally only"
+  },
+  "deleteFromRepo": {
+    "message": "Delete from Repo",
+    "description": "Option to delete script from repo"
+  },
+  "cleanupOrphan": {
+    "message": "Clean up Orphans",
+    "description": "Button to clean up orphaned scripts"
+  },
+  "confirmDeleteFromRepo": {
+    "message": "Are you sure you want to delete this script from the repo? This will also remove the local copy.",
+    "description": "Confirmation prompt for deleting script from repo"
+  },
+  "confirmCleanupOrphan": {
+    "message": "Are you sure you want to clean up all orphaned scripts? These scripts no longer exist in the repo.",
+    "description": "Confirmation prompt for cleaning up orphaned scripts"
+  },
+  "pushAllChanges": {
+    "message": "Push All Changes",
+    "description": "Button for batch pushing all changes"
+  },
+  "dirtyScriptsCount": {
+    "message": "to push",
+    "description": "Badge count for dirty scripts"
+  },
+  "batchPushProgress": {
+    "message": "Pushing all changes...",
+    "description": "Batch push progress message"
+  },
+  "batchPushResult": {
+    "message": "Push complete: {success} succeeded, {failed} failed, {conflict} conflicts",
+    "description": "Batch push result summary"
+  },
+  "viewDiff": {
+    "message": "View Diff",
+    "description": "Button to view diff"
+  },
+  "diffDialogTitle": {
+    "message": "Content Diff",
+    "description": "Diff dialog title"
+  },
+  "remoteContent": {
+    "message": "Remote",
+    "description": "Remote content label in diff dialog"
+  },
+  "localContent": {
+    "message": "Local",
+    "description": "Local content label in diff dialog"
+  },
+  "continuePush": {
+    "message": "Continue Push",
+    "description": "Button to continue push"
+  },
+  "pullFromGitHub": {
+    "message": "Pull from GitHub",
+    "description": "Pull button"
+  },
+  "confirmPull": {
+    "message": "Are you sure you want to pull from GitHub and overwrite local content? This will discard local changes.",
+    "description": "Pull confirmation prompt"
+  },
+  "pullSuccess": {
+    "message": "Pulled successfully",
+    "description": "Pull success message"
+  },
+  "deleteSuccess": {
+    "message": "Deleted successfully",
+    "description": "Delete success message"
+  },
+  "create": {
+    "message": "Create",
+    "description": "Create button text"
+  },
+  "branch": {
+    "message": "Branch",
+    "description": "Label for branch selector"
+  },
+  "loadBranches": {
+    "message": "Load Branches",
+    "description": "Button text to load branches"
+  },
+  "loadingBranches": {
+    "message": "Loading...",
+    "description": "Loading message for branches"
+  },
+  "newBranch": {
+    "message": "New Branch",
+    "description": "Button text to create new branch"
+  },
+  "createNewBranch": {
+    "message": "Create New Branch",
+    "description": "Title for create branch dialog"
+  },
+  "branchName": {
+    "message": "Branch Name",
+    "description": "Label for branch name input"
+  },
+  "sourceBranch": {
+    "message": "Source Branch",
+    "description": "Label for source branch selector"
+  },
+  "branchNameRequired": {
+    "message": "Branch name is required",
+    "description": "Error message when branch name is empty"
+  },
+  "branchNamePlaceholder": {
+    "message": "my-new-branch",
+    "description": "Placeholder for branch name input"
+  },
+  "branchCreated": {
+    "message": "Branch {branchName} created successfully",
+    "description": "Success message for branch creation"
+  },
+  "branchSwitch": {
+    "message": "Switched to branch: {branchName}",
+    "description": "Success message for branch switch"
+  },
+  "currentBranch": {
+    "message": "Current branch:",
+    "description": "Label for current branch display"
+  },
+  "failedToFetchBranches": {
+    "message": "Failed to fetch branches",
+    "description": "Error message for branch fetch failure"
+  }
+}
