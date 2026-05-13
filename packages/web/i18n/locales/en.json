@@ -1,0 +1,158 @@
+{
+  "seo": {
+    "title": "Repo Monkey | GitHub-native userscript control for Chrome",
+    "description": "Repo Monkey turns GitHub repositories into a modern workflow for syncing, editing, and shipping browser userscripts."
+  },
+  "brand": {
+    "name": "Repo Monkey",
+    "tagline": "GitHub-native userscript control",
+    "ariaLabel": "Repo Monkey home"
+  },
+  "nav": {
+    "ariaLabel": "Primary navigation",
+    "capabilities": "Capabilities",
+    "workflow": "Workflow",
+    "scenarios": "Scenarios",
+    "faq": "FAQ"
+  },
+  "language": {
+    "label": "Language switcher"
+  },
+  "hero": {
+    "eyebrow": "MV3 extension for deliberate script shipping",
+    "title": "Turn browser scripts into a disciplined release system.",
+    "lead": "Repo Monkey connects your userscripts to GitHub so every change can be synced, reviewed, edited, and shipped from a cleaner control room inside Chrome.",
+    "primaryAction": "See the workflow",
+    "secondaryAction": "Read the setup notes",
+    "signalLabel": "Key product signals",
+    "signals": {
+      "repo": "Repository-backed by default",
+      "diff": "Reviewable diffs before release",
+      "runtime": "Managed directly in the browser"
+    },
+    "primaryPanel": {
+      "label": "Repository cockpit",
+      "title": "A versioned workspace for scripts that used to live as loose snippets.",
+      "body": "Keep the habits you already trust: branches, history, structured editing, and a single source of truth for automation code.",
+      "points": {
+        "one": "Bind a GitHub repo and load scripts from `/output/` or the repo root.",
+        "two": "Review local changes before they become the live browser version.",
+        "three": "Sync on demand or let the extension keep your script catalog up to date."
+      }
+    },
+    "secondaryPanel": {
+      "label": "Runtime bridge",
+      "title": "A calmer control room inside Chrome.",
+      "body": "Enable scripts, inspect their state, and keep deployment friction low without giving up Git-backed discipline."
+    }
+  },
+  "features": {
+    "eyebrow": "Core capabilities",
+    "title": "Built for people who want scripts to behave like real project assets.",
+    "lead": "The site is opinionated because the product is opinionated: version control, better visibility, and fewer copy-paste rituals.",
+    "items": {
+      "repo": {
+        "title": "Repository-first",
+        "body": "Bind one GitHub repository and let Repo Monkey treat your scripts as versioned assets instead of scattered browser-side state."
+      },
+      "sync": {
+        "title": "Structured sync",
+        "body": "Bring remote scripts into the extension, compare local changes, and keep a stable source of truth for what should run."
+      },
+      "edit": {
+        "title": "Focused editing",
+        "body": "Work in a purpose-built extension interface that highlights script state, local modifications, and sync conflicts clearly."
+      },
+      "ship": {
+        "title": "Safer release path",
+        "body": "Use branches, diffs, and commit-ready thinking to move from experiment to live script with less risk."
+      }
+    }
+  },
+  "workflow": {
+    "eyebrow": "How it works",
+    "title": "A four-step loop for syncing and shipping userscripts.",
+    "lead": "The extension keeps the workflow simple while preserving the discipline of a code repository.",
+    "steps": {
+      "connect": {
+        "title": "Bind your repository",
+        "body": "Add a GitHub personal access token and point the extension at `owner/repo`, HTTPS, or SSH format."
+      },
+      "sync": {
+        "title": "Sync the catalog",
+        "body": "Pull scripts from `/output/` when present, otherwise from the repository root, and keep the list ready in Chrome."
+      },
+      "edit": {
+        "title": "Edit with visibility",
+        "body": "Inspect script status, update code locally, and keep modified or conflicted states visible before shipping."
+      },
+      "release": {
+        "title": "Run and release",
+        "body": "Enable the scripts you need, confirm browser permissions, and promote changes with more confidence."
+      }
+    }
+  },
+  "scenarios": {
+    "eyebrow": "Who it fits",
+    "title": "Designed for power users, maintainers, and teams that automate in the browser.",
+    "lead": "Repo Monkey works best when userscripts matter enough to deserve traceability, reviewability, and a repeatable release flow.",
+    "metrics": {
+      "traceable": {
+        "value": "Git-backed",
+        "label": "History stays readable and audit-friendly."
+      },
+      "clean": {
+        "value": "Low-noise",
+        "label": "The UI stays focused on script operations."
+      }
+    },
+    "items": {
+      "solo": {
+        "title": "Solo builders",
+        "body": "Keep personal automation organized instead of losing track of one-off scripts spread across files and browser storage."
+      },
+      "team": {
+        "title": "Shared script libraries",
+        "body": "Store scripts in a repository that teammates can inspect, review, and evolve without opaque handoffs."
+      },
+      "ops": {
+        "title": "Operational tooling",
+        "body": "Use userscripts for dashboards, internal tools, and repetitive workflows while keeping changes easier to reason about."
+      }
+    }
+  },
+  "faq": {
+    "eyebrow": "Setup notes",
+    "title": "What the product does and how to get it running.",
+    "lead": "A few details matter when you wire browser automation to a repository-backed workflow.",
+    "items": {
+      "what": {
+        "question": "What exactly is Repo Monkey?",
+        "answer": "It is a Chrome MV3 extension that manages userscripts through a GitHub repository instead of treating them as isolated browser snippets."
+      },
+      "where": {
+        "question": "Where should my scripts live?",
+        "answer": "The extension looks in `/output/` first. If that directory does not exist, it falls back to loading `.js` files from the repository root."
+      },
+      "permission": {
+        "question": "What browser setup is required?",
+        "answer": "You still need to enable the Chrome \"Allow User Scripts\" permission so scripts synced from your repository can execute."
+      },
+      "who": {
+        "question": "Who is this best for?",
+        "answer": "People who already think in repositories, diffs, and release hygiene, and want the same discipline for browser-side automation."
+      }
+    }
+  },
+  "cta": {
+    "eyebrow": "Ready to explore",
+    "title": "Build a cleaner userscript pipeline on top of GitHub.",
+    "body": "If your scripts deserve version history and a sharper release loop, Repo Monkey gives the browser a control room that feels closer to real software delivery.",
+    "primaryAction": "Open GitHub",
+    "secondaryAction": "Back to top"
+  },
+  "footer": {
+    "copy": "Repo Monkey for disciplined browser automation.",
+    "meta": "Designed for focused shipping. {year}."
+  }
+}
