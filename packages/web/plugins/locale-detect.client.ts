@@ -79,7 +79,7 @@ export default defineNuxtPlugin({
   dependsOn: ['i18n:plugin', 'i18n:plugin:ssg-detect'],
   enforce: 'post',
   async setup(nuxtApp) {
-    const { locale, setLocale } = useI18n();
+    const { locale, setLocale } = nuxtApp.$i18n;
 
     async function applyPreferredLocale(): Promise<void> {
       const nextLocale = resolvePreferredLocale();
