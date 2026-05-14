@@ -1,5 +1,8 @@
 <script setup lang="ts">
 const { t } = useI18n();
+
+const githubRepositoryUrl = 'https://github.com/allenhooray/repo-monkey';
+const githubReleasesUrl = `${githubRepositoryUrl}/releases`;
 </script>
 
 <template>
@@ -10,19 +13,16 @@ const { t } = useI18n();
       <p class="hero__lead">{{ t('hero.lead') }}</p>
 
       <div class="hero__actions">
-        <a class="button button--primary" href="#workflow">
-          {{ t('hero.primaryAction') }}
+        <span class="button button--disabled" role="link" aria-disabled="true">
+          {{ t('downloads.storeAction') }}
+        </span>
+        <a class="button button--primary" :href="githubReleasesUrl" target="_blank" rel="noreferrer">
+          {{ t('downloads.releasesAction') }}
         </a>
-        <a class="button button--ghost" href="#faq">
-          {{ t('hero.secondaryAction') }}
+        <a class="button button--ghost" :href="githubRepositoryUrl" target="_blank" rel="noreferrer">
+          {{ t('downloads.repositoryAction') }}
         </a>
       </div>
-
-      <ul class="hero__signals" :aria-label="t('hero.signalLabel')">
-        <li>{{ t('hero.signals.repo') }}</li>
-        <li>{{ t('hero.signals.diff') }}</li>
-        <li>{{ t('hero.signals.runtime') }}</li>
-      </ul>
     </div>
 
     <div class="hero__visual">

@@ -5,27 +5,28 @@ interface NavigationLink {
 }
 
 const { locale, setLocale, t } = useI18n();
+const MANUAL_LOCALE_STORAGE_KEY = 'repo-monkey-manual-locale';
 
 const navigationLinks: NavigationLink[] = [
   { id: 'capabilities', labelKey: 'nav.capabilities' },
-  { id: 'workflow', labelKey: 'nav.workflow' },
   { id: 'scenarios', labelKey: 'nav.scenarios' },
-  { id: 'faq', labelKey: 'nav.faq' },
 ];
 
 /**
  * Switches the active locale and persists the manual choice for later visits.
  */
 async function handleLocaleChange(nextLocale: string): Promise<void> {
+  window.localStorage.setItem(MANUAL_LOCALE_STORAGE_KEY, nextLocale);
   await setLocale(nextLocale);
-  window.localStorage.setItem('repo-monkey-locale', nextLocale);
 }
 </script>
 
 <template>
   <header class="topbar glass-panel section-shell">
     <a class="brand" href="#hero" :aria-label="t('brand.ariaLabel')">
-      <span class="brand__mark">RM</span>
+      <span class="brand__mark">
+        <img src="/icon.png" alt="" width="48" height="48">
+      </span>
       <span>
         <strong class="brand__name">{{ t('brand.name') }}</strong>
         <span class="brand__tag">{{ t('brand.tagline') }}</span>

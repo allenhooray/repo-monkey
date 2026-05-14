@@ -1,5 +1,8 @@
 <script setup lang="ts">
 const { t } = useI18n();
+
+const githubRepositoryUrl = 'https://github.com/allenhooray/repo-monkey';
+const githubReleasesUrl = `${githubRepositoryUrl}/releases`;
 </script>
 
 <template>
@@ -9,11 +12,14 @@ const { t } = useI18n();
       <h2>{{ t('cta.title') }}</h2>
       <p>{{ t('cta.body') }}</p>
       <div class="hero__actions">
-        <a class="button button--primary" href="https://github.com" target="_blank" rel="noreferrer">
-          {{ t('cta.primaryAction') }}
+        <span class="button button--disabled" role="link" aria-disabled="true">
+          {{ t('downloads.storeAction') }}
+        </span>
+        <a class="button button--primary" :href="githubReleasesUrl" target="_blank" rel="noreferrer">
+          {{ t('downloads.releasesAction') }}
         </a>
-        <a class="button button--ghost" href="#hero">
-          {{ t('cta.secondaryAction') }}
+        <a class="button button--ghost" :href="githubRepositoryUrl" target="_blank" rel="noreferrer">
+          {{ t('downloads.repositoryAction') }}
         </a>
       </div>
     </article>

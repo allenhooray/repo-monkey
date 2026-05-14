@@ -25,9 +25,7 @@ useSeoMeta({
     <SiteHeader />
     <HeroSection />
     <FeatureSection />
-    <WorkflowSection />
     <ScenarioSection />
-    <FaqSection />
     <CtaSection />
     <SiteFooter />
   </main>
