@@ -43,7 +43,7 @@
   },
   "features": {
     "eyebrow": "功能",
-    "title": "少一点搬运，多一点秩序。",
+    "title": "少一点搬运，多一点秩序",
     "lead": "它不替代 GitHub，也不做脚本市场。它只专注一件事：让你的用户脚本更容易保存、同步和维护。",
     "items": {
       "repo": {
@@ -66,7 +66,7 @@
   },
   "scenarios": {
     "eyebrow": "适用场景",
-    "title": "给认真维护用户脚本的人。",
+    "title": "给认真维护用户脚本的人",
     "lead": "当脚本不只是一次性片段，而是会反复修改、共享或迁移的工具，Repo Monkey 会更有用。",
     "metrics": {
       "traceable": {
@@ -95,11 +95,11 @@
   },
   "cta": {
     "eyebrow": "开始使用",
-    "title": "下载扩展，或者先看看源码。",
+    "title": "下载扩展，或者先看看源码",
     "body": "插件商店入口会在发布后开放。现在可以从 GitHub Releases 获取构建包。"
   },
   "footer": {
     "copy": "Repo Monkey，用 GitHub 管理用户脚本。",
-    "meta": "开源项目。{year}。"
+    "meta": "开源项目 {year}"
   }
 }

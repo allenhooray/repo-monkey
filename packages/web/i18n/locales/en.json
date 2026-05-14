@@ -43,7 +43,7 @@
   },
   "features": {
     "eyebrow": "Features",
-    "title": "Less script shuffling. More order.",
+    "title": "Less script shuffling. More order",
     "lead": "Repo Monkey does not replace GitHub or act as a script marketplace. It focuses on making userscripts easier to save, sync, and maintain.",
     "items": {
       "repo": {
@@ -66,7 +66,7 @@
   },
   "scenarios": {
     "eyebrow": "Use cases",
-    "title": "For people who maintain userscripts seriously.",
+    "title": "For people who maintain userscripts seriously",
     "lead": "When scripts are more than one-off snippets, Repo Monkey helps keep them portable, shareable, and easier to revisit.",
     "metrics": {
       "traceable": {
@@ -95,7 +95,7 @@
   },
   "cta": {
     "eyebrow": "Get started",
-    "title": "Download the extension or inspect the source.",
+    "title": "Download the extension or inspect the source",
     "body": "The browser store link will open after publication. For now, grab a build from GitHub Releases."
   },
   "footer": {
